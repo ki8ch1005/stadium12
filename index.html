@@ -73,7 +73,7 @@ function hidePlayerNames(lyrics,player){
 function shuffled(a){const out=[...a];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
 function submitQuizAnswer(value){
  if(answered||finished)return;if(timed&&performance.now()>=deadline){finishQuiz(true);return}const s=session[position],accepted=[s.player,...(s.aliases||[])].map(clean),correct=accepted.includes(clean(value));answered=true;
- if(correct)score++;else history.mistakes[s.id]=(history.mistakes[s.id]||0)+1;
+ attempted++;if(correct)score++;else history.mistakes[s.id]=(history.mistakes[s.id]||0)+1;
  history.answered=(history.answered||0)+1;persist();$('qScore').textContent=`正解 ${score}`;
  $('answerForm').classList.add('hidden');$('choiceAnswers').classList.add('hidden');
  const result=$('answerResult');result.classList.remove('hidden');
