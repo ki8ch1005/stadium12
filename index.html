@@ -49,7 +49,7 @@ function editSong(id){const s=songs.find(x=>x.id===id);if(!s)return;editId=id;$(
 function deleteSong(id){const s=songs.find(x=>x.id===id);if(!s||!confirm(`「${s.player}」のこの曲を削除しますか？`))return;songs=songs.filter(x=>x.id!==id);delete history.mistakes[id];persist();refresh();notify('削除しました')}
 function eligibleSongs(){return songs.filter(x=>(!$('qTeam').value||x.team===$('qTeam').value)&&(!$('qDiff').value||x.difficulty===$('qDiff').value)&&(!$('qEra').value||x.era===$('qEra').value)&&(!$('mistakesOnly').checked||history.mistakes[x.id]>0))}
 function updateEligible(){$('eligible').textContent=`対象曲：${eligibleSongs().length}件（同じ曲は1セット内で重複出題しません）`}$('qTeam').onchange=updateEligible;$('qDiff').onchange=updateEligible;$('qEra').onchange=updateEligible;$('mistakesOnly').onchange=updateEligible;
-function finishQuiz(expired=false){if(finished)return;finished=true;stopClock();quizView('quizEnd');$('timerStrip').classList.add('hidden');$('finalScore').textContent=timed?`${score}問 正解！`:`${score} / ${session.length}問 正解`;$('finalMessage').textContent=timed?`⏱ ${$('qTimeLimit').value}秒タイムアタック：${attempted}問回答 / 正解${score}問（正答率 ${attempted?Math.round(score/attempted*100):0}%）${expired?'。時間終了！':'。全問終了！'}`:`正答率 ${Math.round(score/session.length*100)}%。曲を追加すると次の挑戦がもっと豊富になります！`;$('timeRecord').classList.toggle('hidden',!timed);if(timed){const key='stadium12_best_'+$('qMode').value+'_'+$('qTimeLimit').value;let best=0;try{best=Number(localStorage.getItem(key))||0;if(score>best)localStorage.setItem(key,String(score))}catch{}$('timeRecord').textContent=`🏆 この条件での自己ベスト：${Math.max(score,best)}問（この端末に保存）`}$('qProgress').style.width='100%';prepareRankingSubmission();refresh()}
+function finishQuiz(expired=false){if(finished)return;finished=true;attempted=Math.max(attempted,score,Math.min(session.length,position+(answered?1:0)));stopClock();quizView('quizEnd');$('timerStrip').classList.add('hidden');$('finalScore').textContent=timed?`${score}問 正解！`:`${score} / ${session.length}問 正解`;$('finalMessage').textContent=timed?`⏱ ${$('qTimeLimit').value}秒タイムアタック：${attempted}問回答 / 正解${score}問（正答率 ${attempted?Math.round(score/attempted*100):0}%）${expired?'。時間終了！':'。全問終了！'}`:`正答率 ${Math.round(score/session.length*100)}%。曲を追加すると次の挑戦がもっと豊富になります！`;$('timeRecord').classList.toggle('hidden',!timed);if(timed){const key='stadium12_best_'+$('qMode').value+'_'+$('qTimeLimit').value;let best=0;try{best=Number(localStorage.getItem(key))||0;if(score>best)localStorage.setItem(key,String(score))}catch{}$('timeRecord').textContent=`🏆 この条件での自己ベスト：${Math.max(score,best)}問（この端末に保存）`}$('qProgress').style.width='100%';prepareRankingSubmission();refresh()}
 function tickClock(){if(!timed||finished)return;const remaining=Math.max(0,(deadline-performance.now())/1000);$('timeLeft').textContent=remaining.toFixed(1)+'秒';$('timeLeft').style.color=remaining<=10?'#ffb9a7':'#b9f26a';if(remaining<=0)finishQuiz(true)}
 function quizView(which){['quizSetup','quizPlay','quizEnd'].forEach(id=>$(id).classList.toggle('hidden',id!==which))}
 $('startQuiz').onclick=()=>{rankingEligible=($('qTeam').value===''&&$('qDiff').value===''&&$('qEra').value===''&&!$('mistakesOnly').checked);stopClock();finished=false;timed=$('qStyle').value==='time';attempted=0;const arr=eligibleSongs();if(!arr.length)return notify('条件に合う曲がありません');for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}const limit=$('qNumber').value;session=arr.slice(0,timed?arr.length:(limit==='all'?arr.length:Number(limit)));position=0;score=0;quizView('quizPlay');$('timerStrip').classList.toggle('hidden',!timed);if(timed){deadline=performance.now()+Number($('qTimeLimit').value)*1000;tickClock();tickHandle=setInterval(tickClock,100)}showQuestion()};
@@ -182,9 +182,14 @@ async function rankingClient(){
 }
 function prepareRankingSubmission(){
  const eligible=timed&&rankingEligible&&attempted>0;
- $('rankSubmitBox').classList.toggle('hidden',!eligible);
- $('rankSubmitStatus').textContent=rankReady()?'':'全国ランキングを利用するにはFirebase接続設定が必要です。';
- $('rankSubmit').disabled=!rankReady();
+ // タイムアタックの結果には常に登録欄を出して、対象外の場合も理由を見せる。
+ $('rankSubmitBox').classList.toggle('hidden',!timed);
+ let reason='';
+ if(!rankingEligible)reason='ランキング対象外：球団・難易度・時代を「すべて」にし、「過去に間違えた曲だけ」をオフにしてください。';
+ else if(attempted<1)reason='回答が0問です。1問以上回答してから終了してください。';
+ else if(!rankReady())reason='Firebase接続設定が必要です。';
+ $('rankSubmitStatus').textContent=reason;
+ $('rankSubmit').disabled=!eligible||!rankReady();
  rankingSubmitted=false;
  rankingSession=eligible?{mode:$('qMode').value,seconds:Number($('qTimeLimit').value),score,attempted,endedAt:Date.now()}:null;
  try{$('rankNickname').value=localStorage.getItem('stadium12_rank_nickname')||''}catch{}
@@ -226,5 +231,5 @@ $('rankSubmit').onclick=async()=>{
  }catch(e){$('rankSubmitStatus').textContent='登録できません：'+rankError(e);btn.disabled=false}
 };
 
-refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応';
+refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（ランキング修正版 10/21 ver.3）';
 </script></body></html>
