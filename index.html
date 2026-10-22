@@ -54,7 +54,7 @@ input,select,textarea{background:#071924;border-color:#47606d;color:#fff}.lyric{
    <div id="duelFinished" class="hidden"><h3 id="duelWinner" class="duel-winner"></h3><p>おつかれさま！もう一度対戦する場合は新しいルームを作ってね。</p></div>
    <div class="duel-actions"><button id="duelNew" class="btn">＋ 別のルームを作る</button><button id="duelLeave" class="btn ghost">ルームから抜ける</button></div>
   </div>
-  <p class="help" id="duelConnection" role="status" aria-live="polite">対戦画面を開くと接続を準備します。</p><p class="help" id="duelProgress" role="status" aria-live="polite"></p><p class="help" id="duelError" role="alert"></p>
+  <button id="duelReconnect" class="btn ghost" type="button">接続をやり直す</button><p class="help" id="duelConnection" role="status" aria-live="polite">対戦画面を開くと接続を準備します。</p><p class="help" id="duelProgress" role="status" aria-live="polite"></p><p class="help" id="duelError" role="alert"></p>
   <div class="notice">ルール：先に正解を選ぶと +100点 / 不正解 −50点 / 相手が間違えた後も正解 +100点。10問終了時の合計点で勝敗を決定します。</div>
   <p class="help">※ 双方の端末がインターネットにつながっている必要があります。Firebaseの匿名ログインと対戦ルーム用Firestoreルールの設定が必要です。初期版は友達同士向けで、サーバーによる不正防止・ミリ秒単位の公平性保証はありません。</p>
  </div>
@@ -241,18 +241,35 @@ let rankingEligible=false,rankingSubmitted=false,rankingSession=null,rankingInit
 const rankCollection='rankings';
 const rankKey=(mode,seconds)=>mode+'_'+seconds;
 function rankReady(){return firebaseConfig.apiKey&&!firebaseConfig.apiKey.startsWith('PASTE_')&&firebaseConfig.projectId&&!firebaseConfig.projectId.startsWith('PASTE_')&&firebaseConfig.appId&&!firebaseConfig.appId.startsWith('PASTE_')}
+function firebaseConnectionStage(message){const el=document.getElementById('duelConnection');if(el)el.textContent=message;}
+async function firebaseStep(promise,label,ms){
+ firebaseConnectionStage(label+'…');let timer;
+ try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>{const e=Error(label+'が時間内に完了しませんでした。接続をやり直してください。');e.code='connection/timeout';reject(e);},ms);})]);}
+ finally{clearTimeout(timer);}
+}
 async function rankingClient(){
- if(!rankReady())throw Error('Firebaseとの接続設定がまだ完了していません。サイト管理者がFirebase設定を追加すると全国ランキングが使えます。');
+ if(!rankReady())throw Error('Firebaseとの接続設定がまだ完了していません。');
  if(!rankingInitPromise)rankingInitPromise=(async()=>{
-  const [appMod,authMod,dbMod]=await Promise.all([
+  const [appMod,authMod,dbMod]=await firebaseStep(Promise.all([
    import('https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js'),
    import('https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js'),
    import('https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js')
-  ]);
-  const app=appMod.getApps().find(a=>a.name==='stadium12-ranking')||appMod.initializeApp(firebaseConfig,'stadium12-ranking');
-  const auth=authMod.getAuth(app);
-  await auth.authStateReady();
-  if(!auth.currentUser)await authMod.signInAnonymously(auth);
+  ]),'対戦機能を読み込んでいます',8000);
+  let app=appMod.getApps().find(a=>a.name==='stadium12-ranking')||appMod.initializeApp(firebaseConfig,'stadium12-ranking');
+  let auth;
+  try{auth=authMod.initializeAuth(app,{persistence:[authMod.browserLocalPersistence,authMod.inMemoryPersistence]});}
+  catch(e){if(e.code!=='auth/already-initialized')throw e;auth=authMod.getAuth(app);}
+  try{await firebaseStep(auth.authStateReady(),'ログイン状態を確認しています',5000);}
+  catch(e){
+   if(e.code!=='connection/timeout')throw e;
+   // A separate memory-only Auth avoids a blocked persistence initialization in mobile webviews.
+   app=appMod.getApps().find(a=>a.name==='stadium12-session')||appMod.initializeApp(firebaseConfig,'stadium12-session');
+   try{auth=authMod.initializeAuth(app,{persistence:authMod.inMemoryPersistence});}
+   catch(other){if(other.code!=='auth/already-initialized')throw other;auth=authMod.getAuth(app);}
+   await firebaseStep(auth.authStateReady(),'一時接続を準備しています',5000);
+  }
+  if(!auth.currentUser)await firebaseStep(authMod.signInAnonymously(auth),'対戦サーバーにログインしています',8000);
+  firebaseConnectionStage('接続準備完了');
   return {db:dbMod.getFirestore(app),dbMod,uid:auth.currentUser.uid};
  })().catch(err=>{rankingInitPromise=null;throw err});
  return rankingInitPromise;
@@ -316,7 +333,7 @@ const duelEl=id=>document.getElementById(id);
 let duelEpoch=0,duelInitPromise=null;
 async function duelPrepare(){
  const el=duelEl('duelConnection');el.textContent='接続を準備しています…';
- try{await duelInit();el.textContent='接続準備完了';}catch(e){el.textContent='接続できませんでした。作成・参加ボタンで再接続できます。';}
+ try{await duelInit();el.textContent='接続準備完了';}catch(e){el.textContent=duelNiceError(e)+' 作成・参加ボタンで再試行できます。';}
 }
 async function duelOperation(label,work){
  if(duelWorking)return;
@@ -324,7 +341,7 @@ async function duelOperation(label,work){
  const active=()=>{if(expired||epoch!==duelEpoch)throw Error('操作は終了しています。もう一度お試しください。');};
  duelSetWorking(true);duelNotice('');duelEl('duelProgress').textContent=label+'…';
  try{
-  await Promise.race([work(active),new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;reject(Error('通信に時間がかかっています。ネット接続を確認して、もう一度お試しください。'));},20000);})]);
+  await Promise.race([work(active),new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;reject(Error('通信に時間がかかっています。ネット接続を確認して、もう一度お試しください。'));},30000);})]);
  }catch(e){if(epoch===duelEpoch){duelNotice(duelNiceError(e));console.warn('STADIUM12 room operation',e?.code||'',e?.message||String(e));}}
  finally{clearTimeout(timer);if(epoch===duelEpoch){duelEl('duelProgress').textContent='';duelSetWorking(false);if(duelDoc)duelRender();}}
 }
@@ -479,6 +496,7 @@ async function duelRestore(){
   if(snap.exists()&&snap.data().status!=='finished'&&(snap.data().hostUid===duelUid||snap.data().guestUid===duelUid))duelWatch(last);else duelSaveRoom('');
  }catch(e){if(epoch===duelEpoch)duelNotice('前回のルームを復元できませんでした。新しく作成できます。 '+duelNiceError(e));}
 }
+duelEl('duelReconnect').onclick=()=>window.location.reload();
 duelEl('duelNew').onclick=()=>{duelClearRoom();duelNotice('');void duelCreate();};
 duelEl('duelCreate').onclick=duelCreate;duelEl('duelJoin').onclick=duelJoin;duelEl('duelStart').onclick=duelStart;
 duelEl('duelNext').onclick=duelAdvance;
@@ -487,8 +505,9 @@ duelEl('duelLeave').onclick=()=>{if(!confirm('ルームから抜けますか？�
 // Firebase の復元は画面初期化を妨げずに実行する
 void duelRestore();
 
-refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・ルーム接続修正版 10/22）';
+refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・iPhone接続修正版 10/22）';
 </script></body></html>
+
 
 
 
