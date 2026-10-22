@@ -470,15 +470,16 @@ function duelStartAuto(){
  if(duelAutoTimer!==null)return;
  duelAutoTimer=setInterval(()=>{
   const r=duelDoc;if(!r||r.status!=='playing')return;
-  const due=(r.phase==='countdown'?r.phaseEndsAt:r.phase==='open'?r.deadline:r.phaseEndsAt)||Date.now();
-  const remaining=Math.max(0,Math.ceil((due-Date.now())/1000));
+  const due=r.phase==='countdown'?r.phaseEndsAt:r.phase==='open'?r.deadline:r.phaseEndsAt;
+  const hasDeadline=typeof due==='number'&&Number.isFinite(due)&&due>0;
+  const remaining=hasDeadline?Math.max(0,Math.ceil((due-Date.now())/1000)):null;
   if(r.phase==='countdown'){
-   duelEl('duelLyric').textContent=remaining>0?'⚾ '+remaining:'⚾ PLAY BALL!';
-   duelEl('duelStatus').textContent='第'+(r.questionIndex+1)+'問まで '+remaining+' 秒';
+   duelEl('duelLyric').textContent=remaining!==null&&remaining>0?'⚾ '+remaining:'⚾ PLAY BALL!';
+   duelEl('duelStatus').textContent=remaining===null?'まもなく開始！':'第'+(r.questionIndex+1)+'問まで '+remaining+' 秒';
   }else if(r.phase==='open'){
-   duelEl('duelBuzzInfo').textContent='回答残り '+remaining+' 秒｜正解 +100点';
-   if(!remaining)duelEl('duelOptions').querySelectorAll('button').forEach(b=>b.disabled=true);
-  }else if(r.phase==='resolved')duelEl('duelStatus').textContent='正解発表！ 次の問題まで '+remaining+' 秒';
+   duelEl('duelBuzzInfo').textContent=remaining===null?'4択から回答！ 正解 +100点':'回答残り '+remaining+' 秒｜正解 +100点';
+   if(remaining===0)duelEl('duelOptions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  }else if(r.phase==='resolved')duelEl('duelStatus').textContent=remaining===null?'正解発表！':'正解発表！ 次の問題まで '+remaining+' 秒';
   void duelAutoStep();
  },250);
 }
