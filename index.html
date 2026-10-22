@@ -139,9 +139,9 @@ function deleteSong(id){const s=songs.find(x=>x.id===id);if(!s||!confirm(`「${s
 function eligibleSongs(){return songs.filter(x=>(!$('qTeam').value||x.team===$('qTeam').value)&&(!$('qDiff').value||x.difficulty===$('qDiff').value)&&(!$('qEra').value||x.era===$('qEra').value)&&(!$('mistakesOnly').checked||history.mistakes[x.id]>0))}
 function updateEligible(){$('eligible').textContent=`対象曲：${eligibleSongs().length}件（同じ曲は1セット内で重複出題しません）`}$('qTeam').onchange=updateEligible;$('qDiff').onchange=updateEligible;$('qEra').onchange=updateEligible;$('mistakesOnly').onchange=updateEligible;
 function finishQuiz(expired=false){if(finished)return;finished=true;attempted=Math.max(attempted,score,Math.min(session.length,position+(answered?1:0)));stopClock();quizView('quizEnd');$('timerStrip').classList.add('hidden');$('finalScore').textContent=timed?`${score}問 正解！`:`${score} / ${session.length}問 正解`;$('finalMessage').textContent=timed?`⏱ ${$('qTimeLimit').value}秒タイムアタック：${attempted}問回答 / 正解${score}問（正答率 ${attempted?Math.round(score/attempted*100):0}%）${expired?'。時間終了！':'。全問終了！'}`:`正答率 ${Math.round(score/session.length*100)}%。曲を追加すると次の挑戦がもっと豊富になります！`;$('timeRecord').classList.toggle('hidden',!timed);if(timed){const key='stadium12_best_'+$('qMode').value+'_'+$('qTimeLimit').value;let best=0;try{best=Number(localStorage.getItem(key))||0;if(score>best)localStorage.setItem(key,String(score))}catch{}$('timeRecord').textContent=`🏆 この条件での自己ベスト：${Math.max(score,best)}問（この端末に保存）`}$('qProgress').style.width='100%';prepareRankingSubmission();refresh()}
-function tickClock(){if(!timed||finished)return;const remaining=Math.max(0,(deadline-performance.now())/1000);$('timeLeft').textContent=remaining.toFixed(1)+'秒';$('timeLeft').style.color=remaining<=10?'#ffb9a7':'#b9f26a';if(remaining<=0)finishQuiz(true)}
+function tickClock(){if(!timed||finished)return;const remaining=Math.max(0,(deadline-Date.now())/1000);$('timeLeft').textContent=remaining.toFixed(1)+'秒';$('timeLeft').style.color=remaining<=10?'#ffb9a7':'#b9f26a';if(remaining<=0)finishQuiz(true)}
 function quizView(which){['quizSetup','quizPlay','quizEnd'].forEach(id=>$(id).classList.toggle('hidden',id!==which))}
-$('startQuiz').onclick=()=>{rankingEligible=($('qTeam').value===''&&$('qDiff').value===''&&$('qEra').value===''&&!$('mistakesOnly').checked);stopClock();finished=false;timed=$('qStyle').value==='time';attempted=0;const arr=eligibleSongs();if(!arr.length)return notify('条件に合う曲がありません');for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}const limit=$('qNumber').value;session=arr.slice(0,timed?arr.length:(limit==='all'?arr.length:Number(limit)));position=0;score=0;quizView('quizPlay');$('timerStrip').classList.toggle('hidden',!timed);if(timed){deadline=performance.now()+Number($('qTimeLimit').value)*1000;tickClock();tickHandle=setInterval(tickClock,100)}showQuestion()};
+$('startQuiz').onclick=()=>{rankingEligible=($('qTeam').value===''&&$('qDiff').value===''&&$('qEra').value===''&&!$('mistakesOnly').checked);stopClock();finished=false;timed=$('qStyle').value==='time';attempted=0;const arr=eligibleSongs();if(!arr.length)return notify('条件に合う曲がありません');for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}const limit=$('qNumber').value;session=arr.slice(0,timed?arr.length:(limit==='all'?arr.length:Number(limit)));position=0;score=0;quizView('quizPlay');$('timerStrip').classList.toggle('hidden',!timed);if(timed){deadline=Date.now()+Number($('qTimeLimit').value)*1000;tickClock();tickHandle=setInterval(tickClock,100)}showQuestion()};
 function hidePlayerNames(lyrics,player){
  let words=[player];const n=player.replace(/[\s　・･]/g,'');
  // 日本語名は多くが「名字2字＋名前2〜3字」。5字は3+2の可能性も考慮。
@@ -161,13 +161,13 @@ function hidePlayerNames(lyrics,player){
 }
 function shuffled(a){const out=[...a];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
 function submitQuizAnswer(value){
- if(answered||finished)return;if(timed&&performance.now()>=deadline){finishQuiz(true);return}const s=session[position],accepted=[s.player,...(s.aliases||[])].map(clean),correct=accepted.includes(clean(value));answered=true;
+ if(answered||finished)return;if(timed&&Date.now()>=deadline){finishQuiz(true);return}const s=session[position],accepted=[s.player,...(s.aliases||[])].map(clean),correct=accepted.includes(clean(value));answered=true;
  attempted++;if(correct)score++;else history.mistakes[s.id]=(history.mistakes[s.id]||0)+1;
  history.answered=(history.answered||0)+1;persist();$('qScore').textContent=`正解 ${score}`;
  $('answerForm').classList.add('hidden');$('choiceAnswers').classList.add('hidden');
  const result=$('answerResult');result.classList.remove('hidden');
  result.innerHTML=`<h3 class="${correct?'good':'bad'}">${correct?'◎ 正解！':'× 不正解'}</h3><p><b>正解：${esc(s.player)}</b><br>${esc(s.team)} ／ ${esc(s.era)}${s.year?' ／ '+esc(s.year):''}</p>${s.source&&/^https?:\/\//.test(s.source)?`<a href="${esc(s.source)}" target="_blank" rel="noopener noreferrer">登録された出典を見る ↗</a>`:''}`;
- if(timed){$('nextQuestion').classList.add('hidden');advanceHandle=setTimeout(()=>{advanceHandle=null;if(finished)return;if(performance.now()>=deadline){finishQuiz(true);return}moveNext()},550)}else $('nextQuestion').classList.remove('hidden');
+ if(timed){$('nextQuestion').classList.add('hidden');advanceHandle=setTimeout(()=>{advanceHandle=null;if(finished)return;if(Date.now()>=deadline){finishQuiz(true);return}moveNext()},550)}else $('nextQuestion').classList.remove('hidden');
 }
 function showQuestion(){
  answered=false;const s=session[position];$('qIndex').textContent=timed?`第${position+1}問 / ${session.length}問（タイムアタック）`:`第${position+1}問 / ${session.length}問`;
@@ -283,7 +283,12 @@ async function rankingClient(){
   }
   if(!auth.currentUser)await firebaseStep(authMod.signInAnonymously(auth),'対戦サーバーにログインしています',8000);
   firebaseConnectionStage('接続準備完了');
-  return {db:dbMod.getFirestore(app),dbMod,uid:auth.currentUser.uid};
+  const ua=navigator.userAgent||'';
+  const appleBrowser=/iPhone|iPad|iPod/.test(ua)||(/Safari/.test(ua)&&!/Chrome|Chromium|Edg|OPR|Android/.test(ua));
+  let db;
+  try{db=dbMod.initializeFirestore(app,appleBrowser?{experimentalForceLongPolling:true,useFetchStreams:false}:{});}
+  catch(e){if(e.code!=='failed-precondition')throw e;db=dbMod.getFirestore(app);}
+  return {db,dbMod,uid:auth.currentUser.uid};
  })().catch(err=>{rankingInitPromise=null;throw err});
  return rankingInitPromise;
 }
@@ -365,7 +370,7 @@ function duelNotice(message){duelEl('duelError').textContent=message||'';}
 function duelNiceError(e){let m=rankError(e);if(/permission|ルール|insufficient/i.test(m))return 'Firestoreの対戦ルーム用ルールを公開できているか確認してください。 '+m;if(/not-found/i.test(m))return 'ルームが見つかりません。番号を確認してください。';return m;}
 function duelName(){const n=duelEl('duelName').value.trim().replace(/[\u0000-\u001f\u007f]/g,'');if(n.length<1||n.length>16)throw Error('ニックネームは1〜16文字で入力してください。');try{localStorage.setItem('stadium12_duel_name',n)}catch{}return n;}
 function duelRoomRef(code){return duelFirebase.dbMod.doc(duelFirebase.db,DUEL_COLLECTION,code)}
-function duelSetWorking(flag){duelWorking=flag;duelEl('duelCreate').textContent=flag?'処理中…':'＋ ルームを作る';duelEl('duelJoin').textContent=flag?'処理中…':'ルームに参加';for(const id of ['duelCreate','duelJoin','duelStart']){const b=duelEl(id);if(b)b.disabled=flag}duelEl('duelOptions').querySelectorAll('button').forEach(b=>{b.disabled=flag||!duelDoc||duelDoc.phase!=='open'||duelDoc.firstWrongUid===duelUid||performance.now()<duelClock.readyAt})}
+function duelSetWorking(flag){duelWorking=flag;duelEl('duelCreate').textContent=flag?'処理中…':'＋ ルームを作る';duelEl('duelJoin').textContent=flag?'処理中…':'ルームに参加';for(const id of ['duelCreate','duelJoin','duelStart']){const b=duelEl(id);if(b)b.disabled=flag}duelEl('duelOptions').querySelectorAll('button').forEach(b=>{b.disabled=flag||!duelDoc||duelDoc.phase!=='open'||duelDoc.firstWrongUid===duelUid||Date.now()<duelClock.readyAt})}
 async function duelInit(){if(!duelInitPromise)duelInitPromise=rankingClient().then(client=>{duelFirebase=client;duelUid=client.uid;return client;}).catch(e=>{duelInitPromise=null;throw e});return duelInitPromise;}
 function duelQuestions(){
  const playable=songs.filter(x=>x.player&&x.lyrics&&x.lyrics.trim());
@@ -384,7 +389,7 @@ function duelRandomCode(){const numbers=new Uint32Array(1);crypto.getRandomValue
 function duelSaveRoom(code){try{localStorage.setItem(DUEL_STORE,code)}catch{}}
 function duelClearRoom(){if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelEpoch++;duelSetWorking(false);duelEl('duelProgress').textContent='';if(duelUnsub){duelUnsub();duelUnsub=null;}duelCode=null;duelDoc=null;duelSeenQuestion=-1;duelSaveRoom('');duelEl('duelLobby').classList.remove('hidden');duelEl('duelMatch').classList.add('hidden');}
 function duelWatch(code){
- if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelAutoRetryAt=0;duelDoc=null;duelTimer=setInterval(duelTick,100);
+ if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelAutoRetryAt=0;duelDoc=null;duelTimer=setInterval(duelTick,50);
  if(duelUnsub)duelUnsub();duelCode=code;duelSaveRoom(code);duelEl('duelLobby').classList.add('hidden');duelEl('duelMatch').classList.remove('hidden');duelEl('duelRoomNum').textContent=code;duelNotice('');
  duelUnsub=duelFirebase.dbMod.onSnapshot(duelRoomRef(code),snap=>{
   if(!snap.exists()){duelNotice('ルームが削除されています。');duelClearRoom();return;}
@@ -454,7 +459,7 @@ function duelRender(){
  duelEl('duelQuestionNum').textContent=String(r.questionIndex+1);
  duelEl('duelLyric').textContent='♪ '+q.lyric;
  const alreadyWrong=r.firstWrongUid===duelUid;
- const canAnswer=r.phase==='open'&&!alreadyWrong&&!duelWorking&&performance.now()>=duelClock.readyAt;
+ const canAnswer=r.phase==='open'&&!alreadyWrong&&!duelWorking&&Date.now()>=duelClock.readyAt;
  duelEl('duelOptions').classList.remove('hidden');
  duelEl('duelAutoNext').classList.toggle('hidden',r.phase!=='resolved');
  if(r.phase==='open')duelEl('duelStatus').textContent=alreadyWrong?'不正解。相手の回答を待っています。':r.firstWrongUid?'相手が不正解！ 正解を選ぶと100点。':'4択から直接回答！ 先に正解した人が100点。';
@@ -486,10 +491,10 @@ function duelRender(){
 function duelStart(){duelTransact(r=>{if(r.hostUid!==duelUid||r.status!=='waiting'||!r.guestUid)throw Error('2人そろってからホストが開始してください。');return {status:'playing',phase:'open',questionStartedAt:duelFirebase.dbMod.serverTimestamp()}})}
 function duelTick(){
  const r=duelDoc;if(!r||r.status!=='playing')return;
- const now=performance.now(),key=duelCode+':'+r.questionIndex;
- // Start after the committed server timestamp arrives. Local monotonic timers
- // give every device a full countdown and avoid dependence on its wall clock.
- if(r.questionStartedAt?.toMillis&&duelClock.questionKey!==key){duelClock.questionKey=key;duelClock.readyAt=now+DUEL_COUNTDOWN_MS;duelClock.resultKey=null;duelClock.advanceAt=Infinity;}
+ const now=Date.now(),key=duelCode+':'+r.questionIndex;
+ // Both clients use the same server timestamp deadline; receiving late never adds a fresh three seconds.
+ if(r.questionStartedAt?.toMillis&&duelClock.questionKey!==key){duelClock.questionKey=key;duelClock.readyAt=r.questionStartedAt.toMillis()+DUEL_COUNTDOWN_MS;duelClock.resultKey=null;duelClock.advanceAt=Infinity;}
+ if(r.lastAnswer&&duelClock.questionKey===key)duelClock.readyAt=Math.min(duelClock.readyAt,now);
  const remaining=duelClock.questionKey===key?duelClock.readyAt-now:Infinity;
  const counting=r.phase==='open'&&remaining>0;
  const starting=r.phase==='open'&&!r.lastAnswer&&remaining<=0&&remaining>-800;
@@ -504,13 +509,13 @@ function duelTick(){
  const ready=r.phase==='open'&&!counting&&r.firstWrongUid!==duelUid&&!duelWorking;
  duelEl('duelOptions').querySelectorAll('button').forEach(b=>b.disabled=!ready);
  if(r.phase!=='resolved')return;
- if(r.resolvedAt?.toMillis&&duelClock.resultKey!==key){duelClock.resultKey=key;duelClock.advanceAt=now+DUEL_REVIEW_MS;}
+ if(r.resolvedAt?.toMillis&&duelClock.resultKey!==key){duelClock.resultKey=key;duelClock.advanceAt=r.resolvedAt.toMillis()+DUEL_REVIEW_MS;}
  const wait=duelClock.advanceAt-now;
  duelEl('duelAutoNext').textContent=Number.isFinite(wait)?(r.questionIndex===9?'結果発表まで ':'次の問題まで ')+Math.max(0,Math.ceil(wait/1000))+'秒':'結果を同期しています…';
  if(wait<=0&&!duelWorking&&now>=duelAutoRetryAt){duelAutoRetryAt=now+1000;void duelAdvance(r.questionIndex);}
 }
 function duelAnswer(index,questionIndex){
- if(duelWorking||performance.now()<duelClock.readyAt)return;
+ if(duelWorking||Date.now()<duelClock.readyAt)return;
  duelTransact(r=>{
  if(r.questionIndex!==questionIndex)throw Error('次の問題に変わりました。表示中の選択肢から選んでください。');
  if(r.status!=='playing'||r.phase!=='open')throw Error('相手が先に正解しました。次の問題を待ってください。');
@@ -545,8 +550,9 @@ duelEl('duelLeave').onclick=()=>{if(!confirm('ルームから抜けますか？�
 // Firebase の復元は画面初期化を妨げずに実行する
 void duelRestore();
 
-refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・固定枠カウントダウン版 10/22）';
+refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・開始時刻同期版 10/22）';
 </script></body></html>
+
 
 
 
