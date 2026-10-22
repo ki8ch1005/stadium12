@@ -393,7 +393,7 @@ function duelClearRoom(){if(duelTimer!==null)clearInterval(duelTimer);duelTimer=
 function duelWatch(code){
  if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelAutoRetryAt=0;duelDoc=null;duelTimer=setInterval(duelTick,50);
  if(duelUnsub)duelUnsub();duelCode=code;duelSaveRoom(code);duelEl('duelLobby').classList.add('hidden');duelEl('duelMatch').classList.remove('hidden');duelEl('duelRoomNum').textContent=code;duelNotice('');
- duelUnsub=duelFirebase.dbMod.onSnapshot(duelRoomRef(code),snap=>{
+ duelUnsub=duelFirebase.dbMod.onSnapshot(duelRoomRef(code),{includeMetadataChanges:true},snap=>{
   if(!snap.exists()){duelNotice('ルームが削除されています。');duelClearRoom();return;}
   duelDoc=snap.data();
   if(duelUid!==duelDoc.hostUid&&duelUid!==duelDoc.guestUid){duelClearRoom();duelNotice('このルームに参加していません。');return;}
