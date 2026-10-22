@@ -407,7 +407,9 @@ function duelRender(){
  duelEl('duelLyric').textContent=r.phase==='countdown'?'⚾ READY?':'♪ '+q.lyric;
  duelEl('duelBuzz').classList.add('hidden');
  duelEl('duelNextWrap').classList.toggle('hidden',!(isHost&&r.phase==='resolved'));duelEl('duelSkipWrap').classList.add('hidden');
- const wrong=r.firstWrongUid===duelUid,canAnswer=r.phase==='open'&&!wrong&&!duelWorking&&Date.now()<(r.deadline||Infinity);
+ const wrong=r.firstWrongUid===duelUid;
+ const deadlineValid=typeof r.deadline==='number'&&Number.isFinite(r.deadline)&&r.deadline>0;
+ const canAnswer=r.phase==='open'&&!wrong&&(!deadlineValid||Date.now()<r.deadline);
  duelEl('duelOptions').classList.toggle('hidden',r.phase==='countdown');
  if(r.phase==='open')duelEl('duelStatus').textContent=wrong?'不正解。相手の回答待ちです。':r.firstWrongUid?'相手が不正解！今がチャンス！':'4択を早く選ぼう！正解は100点！';
  else duelEl('duelStatus').textContent=r.phase==='countdown'?'まもなく開始！':'正解発表！自動で次の問題に進みます。';
@@ -426,7 +428,9 @@ function duelRender(){
  q.options.forEach((label,i)=>{
   const btn=document.createElement('button');btn.className='btn';btn.textContent=['A','B','C','D'][i]+'. '+label;
   if(r.phase==='resolved'&&i===q.answerIndex)btn.classList.add('answer-correct');
-  btn.disabled=!canAnswer;btn.onclick=()=>duelAnswer(i,r.questionIndex);options.appendChild(btn);
+  btn.type='button';btn.disabled=!canAnswer;
+  btn.style.touchAction='manipulation';
+  btn.onclick=()=>{duelNotice('');duelAnswer(i,r.questionIndex);};options.appendChild(btn);
  });
 }
 function duelStart(){
@@ -437,11 +441,16 @@ function duelStart(){
   return {status:'playing',phase:'open'};
  });
 }
-function duelAnswer(index,questionIndex){duelTransact(r=>{
+function duelAnswer(index,questionIndex){
+ if(duelWorking){duelNotice('通信中です。もう一度回答してください。');return;}
+ duelNotice('回答を送信しています…');
+ duelTransact(r=>{
  if(r.questionIndex!==questionIndex)throw Error('次の問題に変わりました。');
- if(r.status!=='playing'||r.phase!=='open'||Date.now()>=(r.deadline||Infinity))throw Error('回答受付は終了しました。');
+ const validDeadline=typeof r.deadline==='number'&&Number.isFinite(r.deadline)&&r.deadline>0;
+ if(r.status!=='playing'||r.phase!=='open'||(validDeadline&&Date.now()>=r.deadline))throw Error('回答受付は終了しました。');
  if(r.firstWrongUid===duelUid)throw Error('この問題は回答済みです。');
  const q=r.questions?.[r.questionIndex];if(!q||index<0||index>3)throw Error('問題を確認してください。');
+ if(duelUid!==r.hostUid&&duelUid!==r.guestUid)throw Error('ルームに参加していません。');
  const correct=index===q.answerIndex,second=!!r.firstWrongUid;
  const points=correct?100:-50,host=duelUid===r.hostUid;
  return {phase:correct||second?'resolved':'open',phaseEndsAt:correct||second?Date.now()+DUEL_REVEAL_MS:null,buzzUid:null,
@@ -478,7 +487,7 @@ function duelStartAuto(){
    duelEl('duelStatus').textContent=remaining===null?'まもなく開始！':'第'+(r.questionIndex+1)+'問まで '+remaining+' 秒';
   }else if(r.phase==='open'){
    duelEl('duelBuzzInfo').textContent=remaining===null?'4択から回答！ 正解 +100点':'回答残り '+remaining+' 秒｜正解 +100点';
-   if(remaining===0)duelEl('duelOptions').querySelectorAll('button').forEach(b=>b.disabled=true);
+   if(hasDeadline&&remaining===0)duelEl('duelOptions').querySelectorAll('button').forEach(b=>b.disabled=true);
   }else if(r.phase==='resolved')duelEl('duelStatus').textContent=remaining===null?'正解発表！':'正解発表！ 次の問題まで '+remaining+' 秒';
   void duelAutoStep();
  },250);
