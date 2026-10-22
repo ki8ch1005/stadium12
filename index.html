@@ -52,9 +52,9 @@ input,select,textarea{background:#071924;border-color:#47606d;color:#fff}.lyric{
     <div id="duelNextWrap" class="duel-actions hidden"><button class="btn primary" id="duelNext">次の問題へ →</button></div>
    </div>
    <div id="duelFinished" class="hidden"><h3 id="duelWinner" class="duel-winner"></h3><p>おつかれさま！もう一度対戦する場合は新しいルームを作ってね。</p></div>
-   <div class="duel-actions"><button id="duelLeave" class="btn ghost">ルームから抜ける</button></div>
+   <div class="duel-actions"><button id="duelNew" class="btn">＋ 別のルームを作る</button><button id="duelLeave" class="btn ghost">ルームから抜ける</button></div>
   </div>
-  <p class="help" id="duelError" role="status"></p>
+  <p class="help" id="duelConnection" role="status" aria-live="polite">対戦画面を開くと接続を準備します。</p><p class="help" id="duelProgress" role="status" aria-live="polite"></p><p class="help" id="duelError" role="alert"></p>
   <div class="notice">ルール：先に正解を選ぶと +100点 / 不正解 −50点 / 相手が間違えた後も正解 +100点。10問終了時の合計点で勝敗を決定します。</div>
   <p class="help">※ 双方の端末がインターネットにつながっている必要があります。Firebaseの匿名ログインと対戦ルーム用Firestoreルールの設定が必要です。初期版は友達同士向けで、サーバーによる不正防止・ミリ秒単位の公平性保証はありません。</p>
  </div>
@@ -111,7 +111,7 @@ function persist(){try{localStorage.setItem(STORE,JSON.stringify(songs));localSt
 function notify(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>t.style.display='none',2800)}
 function teamOptions(el,all=false){el.innerHTML=(all?'<option value="">12球団すべて</option>':'')+TEAMS.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')}
 teamOptions($('fTeam'));teamOptions($('qTeam'),true);teamOptions($('libTeam'),true);
-function setTab(t){if(t==='ranking')loadRanking();document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===t));window.scrollTo({top:0,behavior:'smooth'});if(t==='library')renderList()}
+function setTab(t){if(t==='ranking')loadRanking();if(t==='duel')void duelPrepare();document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===t));window.scrollTo({top:0,behavior:'smooth'});if(t==='library')renderList()}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>setTab(b.dataset.goto));
 function refresh(){const n=songs.length;$('countSongs').textContent=n.toLocaleString('ja-JP');$('countTeams').textContent=new Set(songs.map(x=>x.team)).size;$('countPlayed').textContent=history.answered||0;$('quizEmpty').classList.toggle('hidden',n>0);$('quizReady').classList.toggle('hidden',n===0);updateEligible();renderList()}
 function clean(s){return String(s||'').normalize('NFKC').replace(/[\s　・･\.．]/g,'').toLocaleLowerCase()}
@@ -249,8 +249,9 @@ async function rankingClient(){
    import('https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js'),
    import('https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js')
   ]);
-  const app=appMod.initializeApp(firebaseConfig,'stadium12-ranking');
+  const app=appMod.getApps().find(a=>a.name==='stadium12-ranking')||appMod.initializeApp(firebaseConfig,'stadium12-ranking');
   const auth=authMod.getAuth(app);
+  await auth.authStateReady();
   if(!auth.currentUser)await authMod.signInAnonymously(auth);
   return {db:dbMod.getFirestore(app),dbMod,uid:auth.currentUser.uid};
  })().catch(err=>{rankingInitPromise=null;throw err});
@@ -312,12 +313,28 @@ $('rankSubmit').onclick=async()=>{
 const DUEL_COLLECTION='choiceRooms100', DUEL_STORE='stadium12_duel_choice_active_v3';
 let duelCode=null,duelUid=null,duelDoc=null,duelUnsub=null,duelFirebase=null,duelWorking=false,duelSeenQuestion=-1;
 const duelEl=id=>document.getElementById(id);
+let duelEpoch=0,duelInitPromise=null;
+async function duelPrepare(){
+ const el=duelEl('duelConnection');el.textContent='接続を準備しています…';
+ try{await duelInit();el.textContent='接続準備完了';}catch(e){el.textContent='接続できませんでした。作成・参加ボタンで再接続できます。';}
+}
+async function duelOperation(label,work){
+ if(duelWorking)return;
+ const epoch=++duelEpoch;let expired=false,timer;
+ const active=()=>{if(expired||epoch!==duelEpoch)throw Error('操作は終了しています。もう一度お試しください。');};
+ duelSetWorking(true);duelNotice('');duelEl('duelProgress').textContent=label+'…';
+ try{
+  await Promise.race([work(active),new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;reject(Error('通信に時間がかかっています。ネット接続を確認して、もう一度お試しください。'));},20000);})]);
+ }catch(e){if(epoch===duelEpoch){duelNotice(duelNiceError(e));console.warn('STADIUM12 room operation',e?.code||'',e?.message||String(e));}}
+ finally{clearTimeout(timer);if(epoch===duelEpoch){duelEl('duelProgress').textContent='';duelSetWorking(false);if(duelDoc)duelRender();}}
+}
+
 function duelNotice(message){duelEl('duelError').textContent=message||'';}
 function duelNiceError(e){let m=rankError(e);if(/permission|ルール|insufficient/i.test(m))return 'Firestoreの対戦ルーム用ルールを公開できているか確認してください。 '+m;if(/not-found/i.test(m))return 'ルームが見つかりません。番号を確認してください。';return m;}
 function duelName(){const n=duelEl('duelName').value.trim().replace(/[\u0000-\u001f\u007f]/g,'');if(n.length<1||n.length>16)throw Error('ニックネームは1〜16文字で入力してください。');try{localStorage.setItem('stadium12_duel_name',n)}catch{}return n;}
 function duelRoomRef(code){return duelFirebase.dbMod.doc(duelFirebase.db,DUEL_COLLECTION,code)}
-function duelSetWorking(flag){duelWorking=flag;for(const id of ['duelCreate','duelJoin','duelStart','duelNext']){const b=duelEl(id);if(b)b.disabled=flag}duelEl('duelOptions').querySelectorAll('button').forEach(b=>{b.disabled=flag||!duelDoc||duelDoc.phase!=='open'||duelDoc.firstWrongUid===duelUid})}
-async function duelInit(){if(!duelFirebase){duelFirebase=await rankingClient();duelUid=duelFirebase.uid;}return duelFirebase;}
+function duelSetWorking(flag){duelWorking=flag;duelEl('duelCreate').textContent=flag?'処理中…':'＋ ルームを作る';duelEl('duelJoin').textContent=flag?'処理中…':'ルームに参加';for(const id of ['duelCreate','duelJoin','duelStart','duelNext']){const b=duelEl(id);if(b)b.disabled=flag}duelEl('duelOptions').querySelectorAll('button').forEach(b=>{b.disabled=flag||!duelDoc||duelDoc.phase!=='open'||duelDoc.firstWrongUid===duelUid})}
+async function duelInit(){if(!duelInitPromise)duelInitPromise=rankingClient().then(client=>{duelFirebase=client;duelUid=client.uid;return client;}).catch(e=>{duelInitPromise=null;throw e});return duelInitPromise;}
 function duelQuestions(){
  const playable=songs.filter(x=>x.player&&x.lyrics&&x.lyrics.trim());
  const players=[...new Set(playable.map(x=>x.player))];
@@ -333,7 +350,7 @@ function duelQuestions(){
 }
 function duelRandomCode(){const numbers=new Uint32Array(1);crypto.getRandomValues(numbers);return String(100000+(numbers[0]%900000));}
 function duelSaveRoom(code){try{localStorage.setItem(DUEL_STORE,code)}catch{}}
-function duelClearRoom(){if(duelUnsub){duelUnsub();duelUnsub=null;}duelCode=null;duelDoc=null;duelSeenQuestion=-1;duelSaveRoom('');duelEl('duelLobby').classList.remove('hidden');duelEl('duelMatch').classList.add('hidden');}
+function duelClearRoom(){duelEpoch++;duelSetWorking(false);duelEl('duelProgress').textContent='';if(duelUnsub){duelUnsub();duelUnsub=null;}duelCode=null;duelDoc=null;duelSeenQuestion=-1;duelSaveRoom('');duelEl('duelLobby').classList.remove('hidden');duelEl('duelMatch').classList.add('hidden');}
 function duelWatch(code){
  if(duelUnsub)duelUnsub();duelCode=code;duelSaveRoom(code);duelEl('duelLobby').classList.add('hidden');duelEl('duelMatch').classList.remove('hidden');duelEl('duelRoomNum').textContent=code;duelNotice('');
  duelUnsub=duelFirebase.dbMod.onSnapshot(duelRoomRef(code),snap=>{
@@ -344,48 +361,46 @@ function duelWatch(code){
  },err=>duelNotice('ルームの受信エラー：'+duelNiceError(err)));
 }
 async function duelTransact(mutator){
- if(!duelCode)return;
- duelSetWorking(true);duelNotice('');
- try{await duelInit();await duelFirebase.dbMod.runTransaction(duelFirebase.db,async tx=>{
-  const ref=duelRoomRef(duelCode),snap=await tx.get(ref);
-  if(!snap.exists())throw Error('ルームが見つかりません');
-  const changes=mutator(snap.data());
-  if(changes)tx.update(ref,changes);
- });}catch(e){duelNotice(duelNiceError(e));}finally{duelSetWorking(false);if(duelDoc)duelRender();}
+ if(!duelCode||duelWorking)return;const code=duelCode;
+ return duelOperation('送信しています',async active=>{
+  await duelInit();active();
+  await duelFirebase.dbMod.runTransaction(duelFirebase.db,async tx=>{
+   active();const ref=duelRoomRef(code),snap=await tx.get(ref);active();
+   if(code!==duelCode)throw Error('ルームが切り替わりました。');
+   if(!snap.exists())throw Error('ルームが見つかりません');
+   const changes=mutator(snap.data());if(changes)tx.update(ref,changes);
+  },{maxAttempts:3});active();
+ });
 }
 async function duelCreate(){
- if(duelWorking)return;
- duelSetWorking(true);duelNotice('');
- try{
-  const name=duelName(),questions=duelQuestions();await duelInit();
+ return duelOperation('ルームを作成しています',async active=>{
+  const name=duelName(),questions=duelQuestions();await duelInit();active();
   for(let k=0;k<6;k++){
    const code=duelRandomCode(),ref=duelRoomRef(code);
    try{
     await duelFirebase.dbMod.runTransaction(duelFirebase.db,async tx=>{
-     if((await tx.get(ref)).exists())throw Error('CODE_TAKEN');
+     active();const snap=await tx.get(ref);active();
+     if(snap.exists())throw Error('CODE_TAKEN');
      tx.set(ref,{hostUid:duelUid,guestUid:null,hostName:name,guestName:'',status:'waiting',phase:'ready',questionIndex:0,questions,scoreHost:0,scoreGuest:0,buzzUid:null,firstWrongUid:null,lastAnswer:null,createdAt:duelFirebase.dbMod.serverTimestamp()});
-    });
-    duelWatch(code);return;
-   }catch(e){if(e.message==='CODE_TAKEN')continue;throw e;}
+    },{maxAttempts:3});active();duelWatch(code);return;
+   }catch(e){active();if(e.message==='CODE_TAKEN')continue;throw e;}
   }
   throw Error('ルーム番号の発行に失敗しました。もう一度試してください。');
- }catch(e){duelNotice(duelNiceError(e))}finally{duelSetWorking(false)}
+ });
 }
 async function duelJoin(){
  if(duelWorking)return;const code=duelEl('duelCode').value.trim();if(!/^\d{6}$/.test(code))return duelNotice('ルーム番号を6桁で入力してください。');
- duelSetWorking(true);duelNotice('');
- try{
-  const name=duelName();await duelInit();const ref=duelRoomRef(code);
+ return duelOperation('ルームに参加しています',async active=>{
+  const name=duelName();await duelInit();active();const ref=duelRoomRef(code);
   await duelFirebase.dbMod.runTransaction(duelFirebase.db,async tx=>{
-   const snap=await tx.get(ref);if(!snap.exists())throw Error('そのルームは見つかりません。');
+   active();const snap=await tx.get(ref);active();if(!snap.exists())throw Error('そのルームは見つかりません。');
    const r=snap.data();
    if(r.hostUid===duelUid)throw Error('自分が作ったルームです。');
    if(r.guestUid===duelUid)return;
    if(r.status!=='waiting'||r.guestUid)throw Error('このルームは既に満員、または対戦開始済みです。');
    tx.update(ref,{guestUid:duelUid,guestName:name});
-  });
-  duelWatch(code);
- }catch(e){duelNotice(duelNiceError(e))}finally{duelSetWorking(false)}
+  },{maxAttempts:3});active();duelWatch(code);
+ });
 }
 function duelRender(){
  const r=duelDoc;if(!r)return;const isHost=duelUid===r.hostUid,amGuest=duelUid===r.guestUid;
@@ -457,10 +472,14 @@ function duelAdvance(){duelTransact(r=>{
  return {questionIndex:next,phase:'open',buzzUid:null,firstWrongUid:null,lastAnswer:null};
 })}
 async function duelRestore(){
+ const epoch=duelEpoch;
  let last='';try{last=localStorage.getItem(DUEL_STORE)||'';duelEl('duelName').value=localStorage.getItem('stadium12_duel_name')||''}catch{}
  if(!/^\d{6}$/.test(last))return;
- try{await duelInit();const snap=await duelFirebase.dbMod.getDoc(duelRoomRef(last));if(snap.exists()&&(snap.data().hostUid===duelUid||snap.data().guestUid===duelUid))duelWatch(last);else duelSaveRoom('')}catch(e){duelNotice('前回のルームを復元できませんでした：'+duelNiceError(e))}
+ try{await duelInit();if(epoch!==duelEpoch)return;const snap=await duelFirebase.dbMod.getDoc(duelRoomRef(last));if(epoch!==duelEpoch)return;
+  if(snap.exists()&&snap.data().status!=='finished'&&(snap.data().hostUid===duelUid||snap.data().guestUid===duelUid))duelWatch(last);else duelSaveRoom('');
+ }catch(e){if(epoch===duelEpoch)duelNotice('前回のルームを復元できませんでした。新しく作成できます。 '+duelNiceError(e));}
 }
+duelEl('duelNew').onclick=()=>{duelClearRoom();duelNotice('');void duelCreate();};
 duelEl('duelCreate').onclick=duelCreate;duelEl('duelJoin').onclick=duelJoin;duelEl('duelStart').onclick=duelStart;
 duelEl('duelNext').onclick=duelAdvance;
 duelEl('duelCopy').onclick=async()=>{const code=duelCode;if(!code)return;try{await navigator.clipboard.writeText(code);notify('ルーム番号をコピーしました')}catch{prompt('この番号を友達に送ってください',code)}};
@@ -468,8 +487,9 @@ duelEl('duelLeave').onclick=()=>{if(!confirm('ルームから抜けますか？�
 // Firebase の復元は画面初期化を妨げずに実行する
 void duelRestore();
 
-refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（12球団252曲・回答通知100点版 10/22）';
+refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・ルーム接続修正版 10/22）';
 </script></body></html>
+
 
 
 
