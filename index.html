@@ -19,9 +19,9 @@
 <section id="duel" class="panel">
  <div class="card duel-shell">
   <div class="duel-header"><div><div class="duel-kicker">STADIUM12 ONLINE MATCH</div><h2>4択スピード対戦</h2><p>3・2・1 → START！ 正解は100点。結果表示の3秒後に自動で次の問題へ。</p></div><span class="duel-pill">2 PLAYERS / 4 CHOICES</span></div>
-  <section class="duel-record" aria-label="自分のルーム戦成績"><div class="duel-record-heading"><h3>あなたの対戦成績</h3><span id="duelStreak" class="duel-streak hidden" aria-live="polite"></span></div><div class="duel-record-numbers"><span><b id="duelWins">0</b>勝</span><span><b id="duelLosses">0</b>敗</span><span><b id="duelDraws">0</b>分</span></div><p class="duel-record-note" id="duelRecordNote">終了した対戦をこの端末に保存します。</p><details><summary>これまでの対戦</summary><ul id="duelRecordList" class="duel-record-list"></ul></details></section><div id="duelLobby">
+  <section class="duel-record" aria-label="自分のランダム対戦成績"><div class="duel-record-heading"><h3>ランダム対戦の成績</h3><span id="duelStreak" class="duel-streak hidden" aria-live="polite"></span></div><div class="duel-record-numbers"><span>レート <b id="duelRating">1500</b></span><span><b id="duelWins">0</b>勝</span><span><b id="duelLosses">0</b>敗</span><span><b id="duelDraws">0</b>分</span></div><p class="duel-record-note" id="duelRecordNote">ランダム対戦だけを集計します。初期レートは1500です。</p><details><summary>この端末のランダム対戦履歴</summary><ul id="duelRecordList" class="duel-record-list"></ul></details></section><div id="duelLobby">
    <div class="field"><label for="duelName">自分のニックネーム（1〜16文字）</label><input id="duelName" maxlength="16" placeholder="例：猛虎魂" autocomplete="nickname"></div>
-   <div class="duel-modes"><section class="duel-mode"><h3>ランダム対戦</h3><p>オンラインの相手を自動で探します。2人そろうと対戦開始。共通の収録曲で10問勝負、回答時間は1問20秒です。</p><button class="btn primary" id="duelRandom">対戦相手を探す</button></section><details class="duel-mode"><summary>ルーム対戦</summary><p>6桁のルーム番号で相手と対戦します。</p>   <div class="duel-actions"><button class="btn primary" id="duelCreate">＋ ルームを作る</button></div>
+   <div class="duel-modes"><section class="duel-mode"><h3>ランダム対戦</h3><p>オンラインの相手を自動で探します。2人そろうと対戦開始。共通の収録曲で10問勝負、回答時間は1問20秒です。勝敗とレートが記録されます。</p><button class="btn primary" id="duelRandom">対戦相手を探す</button></section><details class="duel-mode"><summary>ルーム対戦</summary><p>6桁のルーム番号で相手と対戦します。勝敗・連勝・レートの記録対象外です。</p>   <div class="duel-actions"><button class="btn primary" id="duelCreate">＋ ルームを作る</button></div>
    <div class="duel-join"><div class="field"><label for="duelCode">友達のルーム番号（6桁）</label><input id="duelCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456"></div><button class="btn" id="duelJoin">ルームに参加</button></div>
    <p class="help">ルームを作った人は6桁の番号を友達に送ってください。参加者は同じサイトを開いて番号を入力します。問題はルーム作成者の曲ライブラリから出題されます。</p></details></div>
   </div>
@@ -39,7 +39,7 @@
     <div class="duel-answer-info" id="duelAnswerInfo" aria-live="polite"></div>
     <div id="duelAutoNext" class="duel-message hidden" aria-live="polite"></div>
    </div>
-   <div id="duelFinished" class="hidden"><h3 id="duelWinner" class="duel-winner"></h3><p>おつかれさま！下のボタンから次の対戦に進めます。</p></div>
+   <div id="duelFinished" class="hidden"><h3 id="duelWinner" class="duel-winner"></h3><p id="duelRatingResult" role="status" aria-live="polite"></p><button id="duelRatingRetry" class="btn hidden">成績の保存を再試行</button><p>おつかれさま！下のボタンから次の対戦に進めます。</p></div>
    <div class="duel-actions"><button id="duelRandomAgain" class="btn primary hidden">もう一度ランダム対戦</button><button id="duelNew" class="btn">＋ 別のルームを作る</button><button id="duelLeave" class="btn ghost">ルームから抜ける</button></div>
   </div>
   <button id="duelReconnect" class="btn ghost" type="button">接続をやり直す</button><p class="help" id="duelConnection" role="status" aria-live="polite">対戦画面を開くと接続を準備します。</p><p class="help" id="duelProgress" role="status" aria-live="polite"></p><p class="help" id="duelError" role="alert"></p>
@@ -47,7 +47,7 @@
   <p class="help">ランダム対戦は、同じ時間に相手を探している人と組み合わせます。参加者がいない場合は待機になります。対戦中はこの画面を開いたままにしてください。</p>
  </div>
 </section>
-<section id="ranking" class="panel"><div class="card"><h2>全国ランキング</h2><p>タイムアタックの正解数で競うランキング！ 4択・記入の各モードを30秒・60秒・120秒・180秒ごとに集計します。</p><div class="rank-controls"><div class="field"><label for="rankMode">回答モード</label><select id="rankMode"><option value="choice">4択モード</option><option value="input">選手名入力モード</option></select></div><div class="field"><label for="rankTime">制限時間</label><select id="rankTime"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="180">180秒</option></select></div></div><div class="actions"><button class="btn primary" id="rankReload">ランキングを更新</button></div><p id="rankStatus" class="rank-status" aria-live="polite">読み込み準備中…</p><div id="rankBoard" class="rank-table-wrap"></div><p class="hint">※ランキングは全12球団・全難易度・現役/OBすべて・全登録対象曲で挑戦した記録のみ登録可能です。曲データは端末ごとに異なるため、スコアの完全な公平性は保証できません。</p></div></section><section id="add" class="panel"><div class="card"><h2 id="formTitle">応援歌を登録する</h2><p class="small">歌詞は複数行で登録できます。クイズでは歌詞に含まれる選手の名字・名前を自動的に〇〇に置き換えます。</p><form id="songForm"><div class="grid"><div class="field"><label for="fPlayer">選手名 *</label><input id="fPlayer" required placeholder="例：山田太郎"></div><div class="field"><label for="fTeam">球団 *</label><select id="fTeam" required></select></div><div class="field"><label for="fEra">時代</label><select id="fEra"><option>現役</option><option>OB</option></select></div><div class="field"><label for="fDiff">難易度</label><select id="fDiff"><option>初級</option><option selected>中級</option><option>上級</option></select></div></div><div class="field"><label for="fLyrics">応援歌の歌詞（全体または一部分） *</label><textarea id="fLyrics" required placeholder="例：選手名を含まない応援歌の一節"></textarea></div><div class="grid"><div class="field"><label for="fAccept">別表記・別名（任意）</label><input id="fAccept" placeholder="カンマ区切り。例：山田,やまだたろう"></div><div class="field"><label for="fYear">使用年代（任意）</label><input id="fYear" placeholder="例：2012〜2018"></div></div><div class="field"><label for="fSource">出典URL（任意）</label><input id="fSource" type="url" placeholder="https://..."></div><div class="actions"><button type="submit" class="btn primary" id="saveSong">この曲を登録する</button><button type="button" class="btn ghost" id="cancelEdit">入力をクリア</button></div></form></div></section>
+<section id="ranking" class="panel"><div class="card"><h2>全国ランキング</h2><div class="field"><label for="rankType">ランキングの種類</label><select id="rankType"><option value="rating">ランダム対戦・レート</option><option value="time">タイムアタック</option></select></div><div id="timeRankingIntro"><p>タイムアタックの正解数で競うランキング！ 4択・記入の各モードを30秒・60秒・120秒・180秒ごとに集計します。</p></div><p id="ratingRankingIntro">ランダム対戦専用のレートランキング。初期値1500、相手とのレート差と勝敗で変動します。同点は引き分けです。1戦以上の参加者が対象です。</p><div class="rank-controls" id="timeRankingControls"><div class="field"><label for="rankMode">回答モード</label><select id="rankMode"><option value="choice">4択モード</option><option value="input">選手名入力モード</option></select></div><div class="field"><label for="rankTime">制限時間</label><select id="rankTime"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="180">180秒</option></select></div></div><div class="actions"><button class="btn primary" id="rankReload">ランキングを更新</button></div><p id="rankStatus" class="rank-status" aria-live="polite">読み込み準備中…</p><div id="rankBoard" class="rank-table-wrap"></div><p class="hint" id="timeRankingNote">※ランキングは全12球団・全難易度・現役/OBすべて・全登録対象曲で挑戦した記録のみ登録可能です。曲データは端末ごとに異なるため、スコアの完全な公平性は保証できません。</p></div></section><section id="add" class="panel"><div class="card"><h2 id="formTitle">応援歌を登録する</h2><p class="small">歌詞は複数行で登録できます。クイズでは歌詞に含まれる選手の名字・名前を自動的に〇〇に置き換えます。</p><form id="songForm"><div class="grid"><div class="field"><label for="fPlayer">選手名 *</label><input id="fPlayer" required placeholder="例：山田太郎"></div><div class="field"><label for="fTeam">球団 *</label><select id="fTeam" required></select></div><div class="field"><label for="fEra">時代</label><select id="fEra"><option>現役</option><option>OB</option></select></div><div class="field"><label for="fDiff">難易度</label><select id="fDiff"><option>初級</option><option selected>中級</option><option>上級</option></select></div></div><div class="field"><label for="fLyrics">応援歌の歌詞（全体または一部分） *</label><textarea id="fLyrics" required placeholder="例：選手名を含まない応援歌の一節"></textarea></div><div class="grid"><div class="field"><label for="fAccept">別表記・別名（任意）</label><input id="fAccept" placeholder="カンマ区切り。例：山田,やまだたろう"></div><div class="field"><label for="fYear">使用年代（任意）</label><input id="fYear" placeholder="例：2012〜2018"></div></div><div class="field"><label for="fSource">出典URL（任意）</label><input id="fSource" type="url" placeholder="https://..."></div><div class="actions"><button type="submit" class="btn primary" id="saveSong">この曲を登録する</button><button type="button" class="btn ghost" id="cancelEdit">入力をクリア</button></div></form></div></section>
 <section id="library" class="panel"><div class="card"><div class="card-heading"><h2>曲ライブラリ</h2><button class="btn primary" data-goto="add">＋ 曲を追加</button></div><div class="grid"><div class="field"><label for="searchSong">選手名・歌詞で検索</label><input id="searchSong" placeholder="検索"></div><div class="field"><label for="libTeam">球団</label><select id="libTeam"></select></div></div><p class="small muted" id="listCount"></p><div id="songList" class="songlist"></div></div></section>
 <section id="files" class="panel"><div class="card"><h2>Excel / CSV / JSON を一括読み込み</h2><p>曲数を増やしたいときは、表計算ソフトでデータを作成して読み込めます。読込後は自動的にクイズへ反映されます。</p><div class="file"><input type="file" id="fileInput" accept=".xlsx,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json"><div class="actions"><button class="btn primary" id="importFile">ファイルを読み込む</button><button class="btn ghost" id="csvTemplate">CSVテンプレートを保存</button><a class="btn" href="ouenka_template.xlsx" download>Excelテンプレートを保存</a></div><p class="hint">Excel・CSV列名：<code>player,team,lyrics,era,difficulty,aliases,year,source</code><br>文字コード：UTF-8（BOM付きも可）。同一選手でも異なる歌詞は別曲として登録できます。</p></div><div id="importResult" class="notice hidden" aria-live="polite"></div></div><div class="card"><h2>バックアップ</h2><p>データはこのブラウザ内に保存されます。機種変更・ブラウザのデータ削除に備えてJSON形式でバックアップしてください。</p><div class="actions"><button class="btn primary" id="exportJSON">全データをJSON保存</button><button class="btn" id="exportCSV">全データをCSV保存</button></div></div><div class="card"><h2>データの管理</h2><p class="small">一括削除は取り消せません。バックアップしてから実行してください。</p><button class="btn danger" id="clearAll">全曲と回答履歴を削除</button></div></section><div class="footer">STADIUM 12 — 曲データとクイズ履歴は端末に保存。ランキング登録時はニックネームと記録をFirebaseへ送信します。登録する歌詞は利用権限に配慮してください。</div></div><div id="toast" role="status"></div>
 <noscript><div style="position:sticky;top:0;background:#652d22;color:white;padding:16px;z-index:999;text-align:center">この表示環境ではJavaScriptが無効です。ファイルを保存し、SafariまたはChromeで開いてください。</div></noscript><script>
@@ -336,12 +336,14 @@ function prepareRankingSubmission(){
 }
 function rankError(e){let message=e?.message||String(e);if(/permission-denied|insufficient permissions/i.test(message))return 'Firestoreのセキュリティルールを確認してください。';if(/auth\/operation-not-allowed|ADMIN_ONLY_OPERATION/i.test(message))return 'Firebase Authenticationの「匿名」ログインを有効にしてください。';if(/Failed to fetch|network-request-failed/i.test(message))return '通信できません。ネット接続を確認してください。';return message}
 async function loadRanking(){
+ const rated=$('rankType').value==='rating';for(const id of ['timeRankingIntro','timeRankingControls','timeRankingNote'])$(id).classList.toggle('hidden',rated);$('ratingRankingIntro').classList.toggle('hidden',!rated);if(rated)return loadRatingRanking();
  const status=$('rankStatus'),board=$('rankBoard');status.textContent='ランキングを読み込み中…';board.innerHTML='';
  try{
   const {db,dbMod}=await rankingClient();
   // Existing Firestore rules use /rankings/{rankingId}, with one result per document.
   // Filter client-side to avoid requiring a composite Firestore index.
   const snapshot=await dbMod.getDocs(dbMod.query(dbMod.collection(db,rankCollection),dbMod.limit(500)));
+  if($('rankType').value!=='time')return;
   const mode=$('rankMode').value,seconds=Number($('rankTime').value);
   const data=snapshot.docs.map(d=>({id:d.id,...d.data()}))
     .filter(x=>x.mode===mode&&x.duration===seconds&&Number.isInteger(x.score)&&x.score>=0)
@@ -350,8 +352,8 @@ async function loadRanking(){
   board.innerHTML=data.length?'<table class="rank-table"><thead><tr><th>順位</th><th>ニックネーム</th><th>正解数</th></tr></thead><tbody>'+data.map((x,i)=>`<tr><td class="rank-badge">${i+1}位</td><td>${esc(String(x.nickname||'ゲスト').slice(0,16))}</td><td><span class="rank-number">${x.score}</span> 問</td></tr>`).join('')+'</tbody></table>':'<div class="empty muted">まだ登録された記録がありません。最初の挑戦者になろう！</div>';
  }catch(e){status.textContent='ランキングを表示できません：'+rankError(e);board.innerHTML=''}
 }
-$('rankMode').onchange=loadRanking;$('rankTime').onchange=loadRanking;$('rankReload').onclick=loadRanking;
-$('rankShowAfter').onclick=()=>{$('rankMode').value=rankingSession?.mode||'choice';$('rankTime').value=String(rankingSession?.seconds||60);setTab('ranking')};
+$('rankType').onchange=loadRanking;$('rankMode').onchange=loadRanking;$('rankTime').onchange=loadRanking;$('rankReload').onclick=loadRanking;
+$('rankShowAfter').onclick=()=>{$('rankType').value='time';$('rankMode').value=rankingSession?.mode||'choice';$('rankTime').value=String(rankingSession?.seconds||60);setTab('ranking')};
 $('rankSubmit').onclick=async()=>{
  if(!rankingSession||rankingSubmitted)return;
  const nickname=$('rankNickname').value.trim().replace(/[\u0000-\u001f\u007f]/g,'');
@@ -398,55 +400,107 @@ async function duelSyncClock(force=false){
  return duelTimePromise;
 }
 
-const DUEL_RECORD_STORE='stadium12_duel_records_v1';
+// Ranked results are settled once in one Firestore transaction, for both players.
+const RATED_PROFILES='randomRatings',RATED_RESULTS='randomRatedResults';
+let ratedSelf=null,ratedReadError=false,ratedSelfUnsub=null,ratedPlayers=new Map(),ratedPlayerUnsubs=[],ratedPlayerKey='',ratedSaves=new Map();
+function ratedEmpty(){return {rating:1500,wins:0,losses:0,draws:0,streak:0}}
+function ratedRef(uid){return duelFirebase.dbMod.doc(duelFirebase.db,RATED_PROFILES,uid)}
+function ratedDelta(host,guest,hostScore,guestScore){const actual=hostScore===guestScore?0.5:hostScore>guestScore?1:0;return Math.floor(32*(actual-1/(1+Math.pow(10,(guest-host)/400)))+0.5)}
+function ratedAfter(before,nickname,delta,mine,theirs,code,at){return {nickname,rating:before.rating+delta,wins:before.wins+(mine>theirs?1:0),losses:before.losses+(mine<theirs?1:0),draws:before.draws+(mine===theirs?1:0),streak:mine>theirs?before.streak+1:0,lastRoom:code,updatedAt:at}}
+function ratedWatchSelf(){
+ if(ratedSelfUnsub)return;
+ ratedSelfUnsub=duelFirebase.dbMod.onSnapshot(ratedRef(duelUid),snap=>{ratedSelf=snap.exists()?snap.data():ratedEmpty();ratedReadError=false;duelRenderRecords()},()=>{ratedReadError=true;duelRenderRecords()});
+}
+async function ratedRefresh(){const snap=await firebaseStep(duelFirebase.dbMod.getDocFromServer(ratedRef(duelUid)),'ランダム対戦の成績を確認しています',8000);ratedSelf=snap.exists()?snap.data():ratedEmpty();ratedReadError=false;duelRenderRecords()}
+function ratedStopPlayers(){for(const stop of ratedPlayerUnsubs)stop();ratedPlayerUnsubs=[];ratedPlayerKey='';ratedPlayers.clear()}
+function ratedWatchPlayers(r){
+ const key=r.matchMode==='random'?r.hostUid+':'+(r.guestUid||''):'';if(key===ratedPlayerKey)return;ratedStopPlayers();ratedPlayerKey=key;if(!key)return;
+ for(const uid of [r.hostUid,r.guestUid].filter(Boolean))ratedPlayerUnsubs.push(duelFirebase.dbMod.onSnapshot(ratedRef(uid),snap=>{ratedPlayers.set(uid,snap.exists()?snap.data():ratedEmpty());if(duelDoc)duelRenderPlayerRecords(duelDoc)},()=>{ratedPlayers.delete(uid);if(duelDoc)duelRenderPlayerRecords(duelDoc)}));
+}
+function ratedRenderResult(r){
+ const el=duelEl('duelRatingResult'),retry=duelEl('duelRatingRetry');retry.classList.add('hidden');
+ if(r.matchMode!=='random'){el.textContent='ルーム対戦は成績・レートに記録されません。';return}
+ if(r.ranked!==true){el.textContent='旧バージョンの対戦はレート集計対象外です。次のランダム対戦から記録されます。';return}
+ const state=ratedSaves.get(duelCode);
+ if(state?.result){const host=r.hostUid===duelUid,after=host?state.result.hostAfter:state.result.guestAfter,delta=host?state.result.delta:-state.result.delta;el.textContent=`レート ${after.rating-delta} → ${after.rating}（${delta>=0?'+':''}${delta}）・成績を保存しました。`}
+ else if(state?.error){el.textContent='成績を保存できませんでした。再試行してください。対戦結果は保持されています。';retry.classList.remove('hidden')}
+ else el.textContent='ランダム対戦の成績とレートを保存しています…';
+}
+async function ratedSettle(code,room,uid,force=false){
+ if(room.matchMode!=='random'||room.ranked!==true||room.status!=='finished'||![room.hostUid,room.guestUid].includes(uid))return;
+ const prior=ratedSaves.get(code);if(prior?.promise)return prior.promise;if(prior?.result){ratedCaptureSettled(code,room,uid,prior.result);return prior.result}if(prior?.error&&!force)return;
+ const state={};ratedSaves.set(code,state);
+ state.promise=(async()=>{
+  try{
+   const mod=duelFirebase.dbMod,ref=mod.doc(duelFirebase.db,RATED_RESULTS,code);
+   const result=await firebaseStep(mod.runTransaction(duelFirebase.db,async tx=>{
+    const saved=await tx.get(ref);if(saved.exists())return saved.data();
+    const current=await tx.get(duelRoomRef(code)),r=current.data();
+    if(!r||r.ranked!==true||r.matchMode!=='random'||r.status!=='finished'||![r.hostUid,r.guestUid].includes(uid))throw Error('集計対象の結果を確認できません。');
+    const hRef=ratedRef(r.hostUid),gRef=ratedRef(r.guestUid),hs=await tx.get(hRef),gs=await tx.get(gRef),h=hs.exists()?hs.data():ratedEmpty(),g=gs.exists()?gs.data():ratedEmpty();
+    const delta=ratedDelta(h.rating,g.rating,r.scoreHost,r.scoreGuest),at=mod.serverTimestamp();
+    const hostAfter=ratedAfter(h,r.hostName,delta,r.scoreHost,r.scoreGuest,code,at),guestAfter=ratedAfter(g,r.guestName,-delta,r.scoreGuest,r.scoreHost,code,at);
+    const settled={hostUid:r.hostUid,guestUid:r.guestUid,delta,hostAfter,guestAfter,createdAt:at};
+    tx.set(hRef,hostAfter);tx.set(gRef,guestAfter);tx.set(ref,settled);return settled;
+   },{maxAttempts:5}),'ランダム対戦の成績を保存しています',15000);
+   state.result=result;state.error=false;ratedCaptureSettled(code,room,uid,result);
+   if(uid===duelUid){ratedSelf=uid===result.hostUid?result.hostAfter:result.guestAfter;duelRenderRecords()}
+   return result;
+  }catch(e){state.error=true;console.warn('Ranked settlement failed:',e?.code||e?.message);}
+  finally{state.promise=null;if(code===duelCode&&duelDoc?.status==='finished')ratedRenderResult(duelDoc)}
+ })();return state.promise;
+}
+async function loadRatingRanking(){
+ const status=$('rankStatus'),board=$('rankBoard');status.textContent='レートランキングを読み込み中…';board.innerHTML='';
+ try{
+  const {db,dbMod,uid}=await rankingClient();
+  const snapshot=await dbMod.getDocs(dbMod.query(dbMod.collection(db,RATED_PROFILES),dbMod.orderBy('rating','desc'),dbMod.limit(30)));
+  if($('rankType').value!=='rating')return;
+  const data=snapshot.docs.map(d=>({id:d.id,...d.data()}));
+  status.textContent=`ランダム対戦・レート｜上位${data.length}人（同レートは同順位）`;
+  let rank=0,previous=null;
+  board.innerHTML=data.length?'<table class="rank-table"><thead><tr><th>順位</th><th>ニックネーム</th><th>レート</th><th>勝敗</th></tr></thead><tbody>'+data.map((x,i)=>{if(x.rating!==previous)rank=i+1;previous=x.rating;return `<tr${x.id===uid?' class="rank-highlight"':''}><td class="rank-badge">${rank}位</td><td>${esc(x.nickname)}${x.id===uid?'（あなた）':''}${x.streak>=2?`<br><small>${x.streak}連勝中</small>`:''}</td><td class="rank-number">${x.rating}</td><td>${x.wins}勝 ${x.losses}敗 ${x.draws}分</td></tr>`}).join('')+'</tbody></table>':'<div class="empty muted">まだ成績がありません。ランダム対戦を1戦終えるとランキングに参加できます。</div>';
+ }catch(e){if($('rankType').value==='rating'){status.textContent='レートランキングを表示できません：'+rankError(e);board.innerHTML=''}}
+}
+
+const DUEL_RECORD_STORE='stadium12_random_records_v2';
 let duelRecords=load(DUEL_RECORD_STORE,{matches:[],pending:[]});
 if(!duelRecords||!Array.isArray(duelRecords.matches)||!Array.isArray(duelRecords.pending))duelRecords={matches:[],pending:[]};
 let duelRecordSaved=true,duelRecordRestoring=null;
 function duelPersistRecords(){try{localStorage.setItem(DUEL_RECORD_STORE,JSON.stringify(duelRecords));duelRecordSaved=true}catch{duelRecordSaved=false}duelRenderRecords()}
 function duelRenderRecords(){
- const matches=[...duelRecords.matches].sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id));
- const count=result=>matches.filter(m=>m.result===result).length;
- duelEl('duelWins').textContent=count('win');duelEl('duelLosses').textContent=count('loss');duelEl('duelDraws').textContent=count('draw');
- let streak=0;for(const m of matches){if(m.result!=='win')break;streak++}
- duelEl('duelStreak').textContent=streak+'連勝中';duelEl('duelStreak').classList.toggle('hidden',streak<2);
- duelEl('duelRecordNote').textContent=duelRecordSaved?'終了した対戦をこの端末に保存します。未記録の過去の対戦は含まれません。':'成績を端末に保存できませんでした。この画面を閉じると失われる場合があります。';
- duelEl('duelRecordList').innerHTML=matches.length?matches.map(m=>`<li><span><b class="record-${m.result}">${m.result==='win'?'勝ち':m.result==='loss'?'負け':'引き分け'}</b>　${esc(m.opponent)}<br><small>${new Date(m.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</small></span><strong>${m.mine} − ${m.theirs}</strong></li>`).join(''):'<li>まだ記録された対戦はありません。</li>';
+ const matches=[...duelRecords.matches].sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id)),record=ratedSelf||ratedEmpty();
+ duelEl('duelRating').textContent=record.rating;
+ duelEl('duelWins').textContent=record.wins;duelEl('duelLosses').textContent=record.losses;duelEl('duelDraws').textContent=record.draws;
+ duelEl('duelStreak').textContent=record.streak+'連勝中';duelEl('duelStreak').classList.toggle('hidden',record.streak<2);
+ duelEl('duelRecordNote').textContent=ratedReadError?'成績を取得できません。接続を確認してオンライン画面を開き直してください。':'ランダム対戦だけを集計。初期レート1500。成績はこのブラウザーの匿名アカウントに保存されます。ルーム対戦は対象外です。';
+ duelEl('duelRecordList').innerHTML=matches.length?matches.map(m=>`<li><span><b class="record-${m.result}">${m.result==='win'?'勝ち':m.result==='loss'?'負け':'引き分け'}</b>　${esc(m.opponent)}<br><small>${new Date(m.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</small></span><strong>${m.mine} − ${m.theirs}<br><small>レート ${m.rating}（${m.delta>=0?'+':''}${m.delta}）</small></strong></li>`).join(''):'<li>まだ記録されたランダム対戦はありません。</li>';
 }
-function duelRecordSummary(){
- const matches=[...duelRecords.matches].sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id));
- const summary={wins:0,losses:0,draws:0,streak:0};
- for(const m of matches){if(m.result==='win')summary.wins++;else if(m.result==='loss')summary.losses++;else if(m.result==='draw')summary.draws++}
- for(const m of matches){if(m.result!=='win')break;summary.streak++}
- return summary;
-}
+function duelRecordSummary(){const r=ratedSelf||ratedEmpty();return {wins:r.wins,losses:r.losses,draws:r.draws,streak:r.streak}}
 function duelValidSharedRecord(record){return !!record&&['wins','losses','draws','streak'].every(k=>Number.isInteger(record[k])&&record[k]>=0&&record[k]<=1000000)&&record.streak<=record.wins}
-function duelPlayerRecord(r,host){
- const baseline=host?r.hostRecord:r.guestRecord;if(!duelValidSharedRecord(baseline))return null;
- const record={...baseline};
- if(r.status==='finished'){
-  const mine=host?r.scoreHost:r.scoreGuest,theirs=host?r.scoreGuest:r.scoreHost;
-  if(mine>theirs){record.wins++;record.streak++}else if(mine<theirs){record.losses++;record.streak=0}else{record.draws++;record.streak=0}
- }
- return record;
-}
+function duelPlayerRecord(r,host){return r.matchMode==='random'?(ratedPlayers.get(host?r.hostUid:r.guestUid)||null):null}
 function duelRenderPlayerRecords(r){
  for(const host of [true,false]){
   const role=host?'Host':'Guest',record=duelPlayerRecord(r,host),present=host?!!r.hostUid:!!r.guestUid;
-  duelEl('duel'+role+'Record').textContent=!present?'参加待ち':record?`${record.wins}勝 ${record.losses}敗 ${record.draws}分`:'成績未共有';
+  duelEl('duel'+role+'Record').textContent=!present?'参加待ち':r.matchMode!=='random'?'成績対象外':record?`レート ${record.rating} ｜ ${record.wins}勝 ${record.losses}敗 ${record.draws}分`:'成績を読み込み中…';
   const streak=duelEl('duel'+role+'Streak');streak.textContent=record?record.streak+'連勝中':'';streak.classList.toggle('hidden',!present||!record||record.streak<2);
  }
 }
 function duelCaptureRecord(code,r,uid){
- if(!code||!r||!uid||!r.createdAt?.toMillis)return;
+ if(!code||!r||!uid||r.matchMode!=='random'||r.ranked!==true||!r.createdAt?.toMillis)return;
  const isHost=r.hostUid===uid;if(!isHost&&r.guestUid!==uid)return;
  const id=code+':'+r.createdAt.toMillis();
  if(r.status!=='finished'){
   if(!duelRecords.pending.some(m=>m.id===id)){duelRecords.pending.push({id,code,uid});duelPersistRecords()}
   return;
  }
+ void ratedSettle(code,r,uid);return;
+}
+function ratedCaptureSettled(code,r,uid,settled){
+ const isHost=r.hostUid===uid,id=code+':'+r.createdAt.toMillis();
  const mine=Number(isHost?r.scoreHost:r.scoreGuest),theirs=Number(isHost?r.scoreGuest:r.scoreHost);
  if(!Number.isFinite(mine)||!Number.isFinite(theirs))return;
- if(!duelRecords.matches.some(m=>m.id===id))duelRecords.matches.push({id,at:r.resolvedAt?.toMillis?.()||r.createdAt.toMillis(),opponent:(isHost?r.guestName:r.hostName)||'相手',mine,theirs,result:mine===theirs?'draw':mine>theirs?'win':'loss'});
+ if(!duelRecords.matches.some(m=>m.id===id))duelRecords.matches.push({id,at:r.resolvedAt?.toMillis?.()||r.createdAt.toMillis(),opponent:(isHost?r.guestName:r.hostName)||'相手',mine,theirs,rating:(isHost?settled.hostAfter:settled.guestAfter).rating,delta:isHost?settled.delta:-settled.delta,result:mine===theirs?'draw':mine>theirs?'win':'loss'});
  duelRecords.pending=duelRecords.pending.filter(m=>m.id!==id);duelPersistRecords();
 }
 async function duelRestoreRecords(){
@@ -458,7 +512,7 @@ async function duelRestoreRecords(){
 }
 async function duelPrepare(){
  const el=duelEl('duelConnection');el.textContent='接続を準備しています…';
- try{await duelInit();el.textContent='接続準備完了';void duelRestoreRecords();}catch(e){el.textContent=duelNiceError(e)+' 作成・参加ボタンで再試行できます。';}
+ try{await duelInit();await ratedRefresh();el.textContent='接続準備完了';void duelRestoreRecords();}catch(e){el.textContent=duelNiceError(e)+' 作成・参加ボタンで再試行できます。';}
 }
 async function duelOperation(label,work){
  if(duelWorking)return;
@@ -476,7 +530,7 @@ function duelNiceError(e){let m=rankError(e);if(/permission|ルール|insufficie
 function duelName(){const n=duelEl('duelName').value.trim().replace(/[\u0000-\u001f\u007f]/g,'');if(n.length<1||n.length>16)throw Error('ニックネームは1〜16文字で入力してください。');try{localStorage.setItem('stadium12_duel_name',n)}catch{}return n;}
 function duelRoomRef(code){return duelFirebase.dbMod.doc(duelFirebase.db,DUEL_COLLECTION,code)}
 function duelSetWorking(flag){duelWorking=flag;duelEl('duelCreate').textContent=flag?'処理中…':'＋ ルームを作る';duelEl('duelJoin').textContent=flag?'処理中…':'ルームに参加';for(const id of ['duelCreate','duelJoin','duelStart','duelRandom','duelRandomCancel','duelRandomAgain']){const b=duelEl(id);if(b)b.disabled=flag}duelEl('duelOptions').querySelectorAll('button').forEach(b=>{b.disabled=flag||!duelDoc||duelDoc.phase!=='open'||duelDoc.firstWrongUid===duelUid||duelNow()<duelClock.readyAt})}
-async function duelInit(){if(!duelInitPromise)duelInitPromise=rankingClient().then(client=>{duelFirebase=client;duelUid=client.uid;return client;}).catch(e=>{duelInitPromise=null;throw e});const client=await duelInitPromise;try{await duelSyncClock();return client}catch(e){duelNotice('対戦の開始時刻を同期できませんでした。接続をやり直してください。');throw e}}
+async function duelInit(){if(!duelInitPromise)duelInitPromise=rankingClient().then(client=>{duelFirebase=client;duelUid=client.uid;ratedWatchSelf();return client;}).catch(e=>{duelInitPromise=null;throw e});const client=await duelInitPromise;try{await duelSyncClock();return client}catch(e){duelNotice('対戦の開始時刻を同期できませんでした。接続をやり直してください。');throw e}}
 function duelQuestions(catalog=songs){
  const playable=catalog.filter(x=>x.player&&x.lyrics&&x.lyrics.trim());
  const players=[...new Set(playable.map(x=>x.player))];
@@ -492,13 +546,13 @@ function duelQuestions(catalog=songs){
 }
 function duelRandomCode(){const numbers=new Uint32Array(1);crypto.getRandomValues(numbers);return String(100000+(numbers[0]%900000));}
 function duelSaveRoom(code){try{localStorage.setItem(DUEL_STORE,code)}catch{}}
-function duelClearRoom(){duelStopRandomWait();if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelEpoch++;duelSetWorking(false);duelEl('duelProgress').textContent='';if(duelUnsub){duelUnsub();duelUnsub=null;}duelCode=null;duelDoc=null;duelSeenQuestion=-1;duelSaveRoom('');duelEl('duelLobby').classList.remove('hidden');duelEl('duelMatch').classList.add('hidden');}
+function duelClearRoom(){ratedStopPlayers();duelStopRandomWait();if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelEpoch++;duelSetWorking(false);duelEl('duelProgress').textContent='';if(duelUnsub){duelUnsub();duelUnsub=null;}duelCode=null;duelDoc=null;duelSeenQuestion=-1;duelSaveRoom('');duelEl('duelLobby').classList.remove('hidden');duelEl('duelMatch').classList.add('hidden');}
 function duelWatch(code){
  if(duelTimer!==null)clearInterval(duelTimer);duelTimer=null;duelClock={questionKey:null,readyAt:Infinity,resultKey:null,advanceAt:Infinity};duelAutoRetryAt=0;duelDoc=null;duelTimer=setInterval(duelTick,50);
  if(duelUnsub)duelUnsub();duelCode=code;duelSaveRoom(code);duelEl('duelLobby').classList.add('hidden');duelEl('duelMatch').classList.remove('hidden');duelEl('duelRoomNum').textContent=code;duelNotice('');
  duelUnsub=duelFirebase.dbMod.onSnapshot(duelRoomRef(code),{includeMetadataChanges:true},snap=>{
   if(!snap.exists()){duelNotice('ルームが削除されています。');duelClearRoom();return;}
-  duelDoc=snap.data();
+  duelDoc=snap.data();ratedWatchPlayers(duelDoc);
   if(duelUid!==duelDoc.hostUid&&duelUid!==duelDoc.guestUid){duelClearRoom();duelNotice('このルームに参加していません。');return;}
   if(!snap.metadata?.hasPendingWrites&&!snap.metadata?.fromCache)duelCaptureRecord(code,duelDoc,duelUid);
   duelRender();
@@ -519,13 +573,13 @@ async function duelTransact(mutator){
 const DUEL_RANDOM_QUEUE='randomMatchQueue',DUEL_RANDOM_TTL=45000,DUEL_RANDOM_ANSWER_MS=20000;
 let duelRandomTimer=null,duelRandomBusy=false,duelRandomWaitingSince=0,duelTimeoutRetryAt=0;
 function duelQueueRef(){return duelFirebase.dbMod.doc(duelFirebase.db,DUEL_RANDOM_QUEUE,'waiting')}
-function duelMakeRoom(name,questions,matchMode){return {hostUid:duelUid,guestUid:null,hostName:name,guestName:'',hostRecord:duelRecordSummary(),guestRecord:null,matchMode,status:'waiting',phase:'ready',questionIndex:0,questions,scoreHost:0,scoreGuest:0,buzzUid:null,firstWrongUid:null,lastAnswer:null,questionStartedAt:null,resolvedAt:null,createdAt:duelFirebase.dbMod.serverTimestamp()}}
+function duelMakeRoom(name,questions,matchMode){return {...(matchMode==='random'?{ranked:true}:{}),hostUid:duelUid,guestUid:null,hostName:name,guestName:'',hostRecord:duelRecordSummary(),guestRecord:null,matchMode,status:'waiting',phase:'ready',questionIndex:0,questions,scoreHost:0,scoreGuest:0,buzzUid:null,firstWrongUid:null,lastAnswer:null,questionStartedAt:null,resolvedAt:null,createdAt:duelFirebase.dbMod.serverTimestamp()}}
 function duelStopRandomWait(){if(duelRandomTimer!==null)clearInterval(duelRandomTimer);duelRandomTimer=null;duelRandomWaitingSince=0}
 function duelStartRandomWait(){if(duelRandomTimer!==null)return;duelRandomWaitingSince=duelNow();duelRandomTimer=setInterval(()=>{void duelRandomHeartbeat()},12000)}
 async function duelRandomSearch(){
  if(duelWorking)return;
  return duelOperation('対戦相手を探しています',async active=>{
-  const name=duelName(),questions=duelQuestions(INITIAL_SONGS);await duelInit();active();
+  const name=duelName(),questions=duelQuestions(INITIAL_SONGS);await duelInit();await ratedRefresh();active();
   const queue=duelQueueRef();
   for(let attempt=0;attempt<6;attempt++){
    const newCode=duelRandomCode();
@@ -535,13 +589,14 @@ async function duelRandomSearch(){
      if(slot.exists()){
       const entry=slot.data(),ref=duelRoomRef(entry.roomCode),snap=await tx.get(ref);active();
       const room=snap.exists()?snap.data():null;
-      if(room&&room.matchMode==='random'&&room.status==='waiting'&&!room.guestUid&&entry.ownerUid===room.hostUid){
+      if(room&&room.ranked===true&&room.matchMode==='random'&&room.status==='waiting'&&!room.guestUid&&entry.ownerUid===room.hostUid){
        if(room.hostUid===duelUid){tx.update(queue,{queuedAt:duelFirebase.dbMod.serverTimestamp()});return entry.roomCode}
        if(entry.queuedAt?.toMillis&&duelNow()-entry.queuedAt.toMillis()<DUEL_RANDOM_TTL){
         tx.update(ref,{guestUid:duelUid,guestName:name,guestRecord:duelRecordSummary()});tx.delete(queue);return entry.roomCode;
        }
       }
      }
+     if(slot.exists()&&slot.data().queuedAt?.toMillis&&duelNow()-slot.data().queuedAt.toMillis()<DUEL_RANDOM_TTL)throw Error('前のバージョンの待機が終了するまで少し待って、もう一度検索してください。');
      const ref=duelRoomRef(newCode),existing=await tx.get(ref);active();if(existing.exists())throw Error('CODE_TAKEN');
      tx.set(ref,duelMakeRoom(name,questions,'random'));tx.set(queue,{roomCode:newCode,ownerUid:duelUid,queuedAt:duelFirebase.dbMod.serverTimestamp()});return newCode;
     },{maxAttempts:5});active();duelWatch(code);return;
@@ -627,7 +682,7 @@ async function duelJoin(){
 function duelRender(){
  const r=duelDoc;if(!r)return;duelRenderRandom(r);const isHost=duelUid===r.hostUid,amGuest=duelUid===r.guestUid;
  duelEl('duelHostName').textContent=r.hostName||'HOST';duelEl('duelGuestName').textContent=r.guestName||'参加待ち…';
- duelRenderPlayerRecords(r);
+ duelRenderPlayerRecords(r);duelEl('duelSharedNote').textContent=r.matchMode==='random'?'ランダム対戦専用の成績・レートです。':'ルーム対戦は勝敗・連勝・レートの記録対象外です。';
  duelEl('duelHostPoints').textContent=r.scoreHost||0;duelEl('duelGuestPoints').textContent=r.scoreGuest||0;
  duelEl('duelHostBlock').classList.toggle('duel-me',isHost);duelEl('duelGuestBlock').classList.toggle('duel-me',amGuest);
  duelEl('duelWaiting').classList.toggle('hidden',r.status!=='waiting');
@@ -637,7 +692,7 @@ function duelRender(){
  if(r.status==='waiting'){duelEl('duelStatus').textContent=r.matchMode==='random'?'対戦相手が見つかりました。まもなく開始します。':r.guestUid?'2人そろった！ ホストが対戦を開始できます。':'友達の参加待ちです。6桁のルーム番号を送ってね。';if(r.matchMode==='random'&&r.guestUid&&!duelWorking)duelRandomAutoStart();return;}
  if(r.status==='finished'){
   const winner=r.scoreHost===r.scoreGuest?'引き分け！':(r.scoreHost>r.scoreGuest?r.hostName:r.guestName)+' の勝利！';
-  duelEl('duelWinner').textContent=winner;
+  duelEl('duelWinner').textContent=winner;ratedRenderResult(r);
   duelEl('duelStatus').textContent='対戦終了！ 全10問が終わりました。';return;
  }
  const q=r.questions?.[r.questionIndex];if(!q){duelEl('duelStatus').textContent='問題データがありません。';return;}
@@ -742,10 +797,12 @@ duelEl('duelCreate').onclick=duelCreate;duelEl('duelJoin').onclick=duelJoin;duel
 duelEl('duelCopy').onclick=async()=>{const code=duelCode;if(!code)return;try{await navigator.clipboard.writeText(code);notify('ルーム番号をコピーしました')}catch{prompt('この番号を友達に送ってください',code)}};
 duelEl('duelLeave').onclick=()=>{if(!confirm('ルームから抜けますか？（対戦中はゲームが続く場合があります）'))return;duelClearRoom()};
 // Firebase の復元は画面初期化を妨げずに実行する
+duelEl('duelRatingRetry').onclick=()=>{if(duelDoc)void ratedSettle(duelCode,duelDoc,duelUid,true)};
 duelRenderRecords();void duelRestore();
 
-refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・選手名の入力候補対応版 10/22）';
+refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（252曲・ランダム対戦レート対応版 10/22）';
 </script></body></html>
+
 
 
 
