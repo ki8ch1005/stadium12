@@ -56,7 +56,7 @@
 </section>
 <section id="ranking" class="panel"><div class="card"><h2>全国ランキング</h2><div class="field"><label for="rankType">ランキングの種類</label><select id="rankType"><option value="rating">ランダム対戦・レート</option><option value="time">タイムアタック</option></select></div><div id="timeRankingIntro"><p>タイムアタックの正解数で競うランキング！ 4択・記入の各モードを30秒・60秒・120秒・180秒ごとに集計します。</p></div><p id="ratingRankingIntro">ランダム対戦専用のレートランキング。初期値1500、相手とのレート差と勝敗で変動します。同点は引き分けです。1戦以上の参加者が対象です。</p><div class="rank-controls" id="timeRankingControls"><div class="field"><label for="rankMode">回答モード</label><select id="rankMode"><option value="choice">4択モード</option><option value="input">選手名入力モード</option></select></div><div class="field"><label for="rankTime">制限時間</label><select id="rankTime"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="180">180秒</option></select></div></div><div class="actions"><button class="btn primary" id="rankReload">ランキングを更新</button></div><p id="rankStatus" class="rank-status" aria-live="polite">読み込み準備中…</p><div id="rankBoard" class="rank-table-wrap"></div><p class="hint" id="timeRankingNote">※ランキングは全12球団・全難易度・現役/OBすべて・全登録対象曲で挑戦した記録のみ登録可能です。曲データは端末ごとに異なるため、スコアの完全な公平性は保証できません。</p></div></section><section id="add" class="panel"><div class="card"><h2 id="formTitle">応援歌を登録する</h2><p class="small">歌詞は複数行で登録できます。クイズでは歌詞に含まれる選手の名字・名前を自動的に〇〇に置き換えます。</p><form id="songForm"><div class="grid"><div class="field"><label for="fPlayer">選手名 *</label><input id="fPlayer" required placeholder="例：山田太郎"></div><div class="field"><label for="fTeam">球団 *</label><select id="fTeam" required></select></div><div class="field"><label for="fEra">時代</label><select id="fEra"><option>現役</option><option>OB</option></select></div><div class="field"><label for="fDiff">難易度</label><select id="fDiff"><option>初級</option><option selected>中級</option><option>上級</option></select></div></div><div class="field"><label for="fLyrics">応援歌の歌詞（全体または一部分） *</label><textarea id="fLyrics" required placeholder="例：選手名を含まない応援歌の一節"></textarea></div><div class="grid"><div class="field"><label for="fAccept">別表記・別名（任意）</label><input id="fAccept" placeholder="カンマ区切り。例：山田,やまだたろう"></div><div class="field"><label for="fYear">使用年代（任意）</label><input id="fYear" placeholder="例：2012〜2018"></div></div><div class="field"><label for="fSource">出典URL（任意）</label><input id="fSource" type="url" placeholder="https://..."></div><div class="actions"><button type="submit" class="btn primary" id="saveSong">この曲を登録する</button><button type="button" class="btn ghost" id="cancelEdit">入力をクリア</button></div></form></div></section>
 <section id="library" class="panel"><div class="card"><div class="card-heading"><h2>曲ライブラリ</h2><button class="btn primary" data-goto="add">＋ 曲を追加</button></div><div class="grid"><div class="field"><label for="searchSong">選手名・歌詞で検索</label><input id="searchSong" placeholder="検索"></div><div class="field"><label for="libTeam">球団</label><select id="libTeam"></select></div><div class="field"><label for="libEra">応援歌の区分</label><select id="libEra"><option value="現役" selected>現役のみ</option><option value="OB">OBのみ</option><option value="">現役＋OB</option></select></div></div><p class="small muted" id="listCount"></p><div id="songList" class="songlist"></div></div></section>
-<section id="feedback" class="panel"><div class="card feedback-card"><h2>意見・要望</h2><p>使ってみた感想や、追加してほしい機能、不具合などを教えてください。</p><p class="small muted">名前やメールアドレスの入力は不要です。コメントはサイト上には公開されません。</p><form id="feedbackForm"><div class="field"><label for="feedbackMessage">コメント</label><textarea id="feedbackMessage" name="message" required maxlength="2000" rows="7" placeholder="ご意見・ご要望をこちらに入力してください" aria-describedby="feedbackCount feedbackStatus"></textarea><p class="small muted right" id="feedbackCount">0 / 2,000文字</p></div><div class="feedback-honey" aria-hidden="true"><label for="feedbackWebsite">Website</label><input id="feedbackWebsite" name="_honey" type="text" tabindex="-1" autocomplete="off"></div><div class="actions"><button id="feedbackSubmit" class="btn primary" type="submit" disabled>コメントを送信する</button></div><p id="feedbackStatus" class="feedback-status" role="status" aria-live="polite">送信機能を準備中です。受付開始までお待ちください。</p></form></div></section><div class="footer">STADIUM 12 — 曲データとクイズ履歴は端末に保存。ランキング登録時はニックネームと記録をFirebaseへ送信します。登録する歌詞は利用権限に配慮してください。</div></div><div id="toast" role="status"></div>
+<section id="feedback" class="panel"><div class="card feedback-card"><h2>意見・要望</h2><p>使ってみた感想や、追加してほしい機能、不具合などを教えてください。</p><p class="small muted">名前やメールアドレスの入力は不要です。コメントはサイト上には公開されません。</p><form id="feedbackForm"><div class="field"><label for="feedbackMessage">コメント</label><textarea id="feedbackMessage" name="message" required maxlength="2000" rows="7" placeholder="ご意見・ご要望をこちらに入力してください" aria-describedby="feedbackCount feedbackStatus"></textarea><p class="small muted right" id="feedbackCount">0 / 2,000文字</p></div><div class="feedback-honey" aria-hidden="true"><label for="feedbackWebsite">Website</label><input id="feedbackWebsite" name="_honey" type="text" tabindex="-1" autocomplete="off"></div><div class="actions"><button id="feedbackSubmit" class="btn primary" type="submit" disabled>コメントを送信する</button></div><p id="feedbackStatus" class="feedback-status" role="status" aria-live="polite"></p></form></div></section><div class="footer">STADIUM 12 — 曲データとクイズ履歴は端末に保存。ランキング登録時はニックネームと記録を、意見・要望の送信時はコメントと匿名の識別IDをFirebaseへ保存します。登録する歌詞は利用権限に配慮してください。</div></div><div id="toast" role="status"></div>
 <noscript><div style="position:sticky;top:0;background:#652d22;color:white;padding:16px;z-index:999;text-align:center">この表示環境ではJavaScriptが無効です。ファイルを保存し、SafariまたはChromeで開いてください。</div></noscript><script>
 'use strict';
 
@@ -244,29 +244,32 @@ $('showHint').onclick=()=>{const s=session[position];$('hintText').textContent=`
 $('answerForm').onsubmit=e=>{e.preventDefault();quizSubmitTypedAnswer()};
 function moveNext(){if(finished)return;position++;if(position>=session.length)finishQuiz(false);else showQuestion()}$('nextQuestion').onclick=moveNext;$('quitQuiz').onclick=()=>{if(confirm('このクイズを中断しますか？')){stopClock();finished=true;$('timerStrip').classList.add('hidden');quizView('quizSetup')}};$('retryQuiz').onclick=()=>quizView('quizSetup');
 // The endpoint uses the provider's public form alias; never put a recipient address here.
-const FEEDBACK_ENDPOINT='';
-let feedbackBusy=false;
-function feedbackReady(){return /^https:\/\/formsubmit\.co\/ajax\/[a-zA-Z0-9_-]{16,128}$/.test(FEEDBACK_ENDPOINT)}
+let feedbackBusy=false,feedbackPending=null;
 function feedbackUpdateCount(){const input=$('feedbackMessage');input.setCustomValidity('');$('feedbackCount').textContent=input.value.length.toLocaleString('ja-JP')+' / 2,000文字'}
 $('feedbackMessage').addEventListener('input',feedbackUpdateCount);
-$('feedbackSubmit').disabled=!feedbackReady();
-if(feedbackReady())$('feedbackStatus').textContent='';
+$('feedbackSubmit').disabled=false;
+$('feedbackStatus').textContent='';
 $('feedbackForm').addEventListener('submit',async event=>{
  event.preventDefault();if(feedbackBusy)return;
  const input=$('feedbackMessage'),status=$('feedbackStatus'),button=$('feedbackSubmit'),message=input.value.trim();
  status.classList.remove('good','bad');
- if(!feedbackReady()){status.textContent='送信機能を準備中です。受付開始までお待ちください。';return}
  if(!message||message.length>2000){input.setCustomValidity('コメントを1〜2,000文字で入力してください。');input.reportValidity();return}
- if($('feedbackWebsite').value){status.textContent='入力内容を確認してください。';return}
+ if($('feedbackWebsite').value)return;
  feedbackBusy=true;button.disabled=true;button.textContent='送信中…';status.textContent='コメントを送信しています…';
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
  try{
-  const response=await fetch(FEEDBACK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({name:'STADIUM12 利用者',message,_subject:'STADIUM12へのご意見・ご要望',_url:'https://npbquiz.github.io/stadium12/',_template:'table',_honey:''}),signal:controller.signal});
-  const result=await response.json();
-  if(!response.ok||!(result.success===true||result.success==='true'))throw Error('Submission was not confirmed');
-  input.value='';feedbackUpdateCount();status.classList.add('good');status.textContent='送信しました。ご意見ありがとうございます。';
- }catch{status.classList.add('bad');status.textContent='送信の確認ができませんでした。入力内容は残っています。時間をおいてもう一度お試しください。'}
- finally{clearTimeout(timer);feedbackBusy=false;button.disabled=!feedbackReady();button.textContent='コメントを送信する'}
+  const {db,dbMod,uid}=await rankingClient();
+  if(!feedbackPending||feedbackPending.message!==message)feedbackPending={message,id:dbMod.doc(dbMod.collection(db,'feedback')).id};
+  const pending=feedbackPending,ref=dbMod.doc(db,'feedback',pending.id),gate=dbMod.doc(db,'feedbackSenders',uid);
+  await dbMod.runTransaction(db,async tx=>{
+   const previous=await tx.get(gate);
+   if(previous.exists()&&previous.data().lastId===pending.id)return;
+   tx.set(ref,{message,uid,createdAt:dbMod.serverTimestamp()});
+   tx.set(gate,{lastId:pending.id,sentAt:dbMod.serverTimestamp()});
+  });
+  if(input.value.trim()===message){input.value='';feedbackUpdateCount()}
+  feedbackPending=null;status.classList.add('good');status.textContent='送信しました。ご意見ありがとうございます。';
+ }catch(e){status.classList.add('bad');status.textContent=/permission-denied/.test(e.code||'')?'送信できませんでした。連続送信の場合は1分ほど待ってからお試しください。入力内容は残っています。':'送信を確認できませんでした。入力内容は残っています。接続を確認してもう一度お試しください。'}
+ finally{feedbackBusy=false;button.disabled=false;button.textContent='コメントを送信する'}
 });
 
 // ===== 全国ランキング（Firebase Cloud Firestore） =====
@@ -819,8 +822,9 @@ duelEl('duelLeave').onclick=()=>{if(!confirm('ルームから抜けますか？�
 duelEl('duelRatingRetry').onclick=()=>{if(duelDoc)void ratedSettle(duelCode,duelDoc,duelUid,true)};
 duelRenderRecords();void duelRestore();
 
-refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・オンライン対戦に対応（1,099曲・意見・要望フォーム準備版 10/23）';
+refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・オンライン対戦に対応（1,099曲・意見・要望受付対応 10/23）';
 </script></body></html>
+
 
 
 
