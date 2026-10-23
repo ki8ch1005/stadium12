@@ -226,7 +226,8 @@ function showQuestion(){
  const isChoice=$('qMode').value==='choice';
  $('answerForm').classList.toggle('hidden',isChoice);$('choiceAnswers').classList.toggle('hidden',!isChoice);
  if(isChoice){
-  const pool=shuffled([...new Set(songs.filter(x=>x.player!==s.player&&x.team===s.team).map(x=>x.player)),...new Set(songs.filter(x=>x.player!==s.player).map(x=>x.player))]);
+  const choiceSongs=songs.filter(x=>!$('qEra').value||x.era===$('qEra').value);
+  const pool=shuffled([...new Set(choiceSongs.filter(x=>x.player!==s.player).map(x=>x.player))]);
   const candidates=shuffled([s.player,...pool.filter(p=>p!==s.player).slice(0,3)]);
   const el=$('choiceAnswers');el.innerHTML='';
   for(const name of candidates){const b=document.createElement('button');b.type='button';b.className='btn';b.style.cssText='white-space:normal;min-height:60px;line-height:1.35';b.textContent=name;b.onclick=()=>submitQuizAnswer(name);el.appendChild(b)}
@@ -820,6 +821,7 @@ duelRenderRecords();void duelRestore();
 
 refresh();$('appStatus').textContent='● 操作可能：登録・クイズ・一括読込に対応（1,099曲・OB追加／ランダム対戦レート対応版 10/23）';
 </script></body></html>
+
 
 
 
