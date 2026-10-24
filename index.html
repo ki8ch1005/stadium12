@@ -210,6 +210,10 @@ if(!localStorage.getItem(DIFFICULTY_VERSION)){
 function selectedDifficulties(prefix){return DIFFICULTIES.filter((_,i)=>$(prefix+'Difficulty'+i).checked)}
 function difficultyMatches(song,selected){return selected.includes(DIFFICULTIES.includes(song.difficulty)?song.difficulty:'中級')}
 function randomMatchCatalog(){return INITIAL_SONGS.filter(song=>['初級','中級','上級'].includes(song.difficulty))}
+function randomRoomQuestionsAllowed(room){
+ const allowed=new Set(randomMatchCatalog().map(song=>JSON.stringify([song.player,song.era,hidePlayerNames(song.lyrics,song.player)])));
+ return Array.isArray(room.questions)&&room.questions.length===10&&room.questions.every(q=>Array.isArray(q.options)&&allowed.has(JSON.stringify([q.options[q.answerIndex],q.era,q.lyric])));
+}
 const ANSWER_HISTORY_STORE='stadium12_answers_v1',ANSWER_HISTORY_LIMIT=100;
 let answerHistory=load(ANSWER_HISTORY_STORE,[]);if(!Array.isArray(answerHistory))answerHistory=[];answerHistory=answerHistory.filter(x=>x&&typeof x.player==='string'&&typeof x.correct==='boolean').slice(0,ANSWER_HISTORY_LIMIT);
 let quizRunId='';
@@ -743,7 +747,7 @@ async function duelRandomSearch(){
      if(slot.exists()){
       const entry=slot.data(),ref=duelRoomRef(entry.roomCode),snap=await tx.get(ref);active();
       const room=snap.exists()?snap.data():null;
-      if(room&&room.ranked===true&&room.matchMode==='random'&&room.status==='waiting'&&!room.guestUid&&entry.ownerUid===room.hostUid){
+      if(room&&randomRoomQuestionsAllowed(room)&&room.ranked===true&&room.matchMode==='random'&&room.status==='waiting'&&!room.guestUid&&entry.ownerUid===room.hostUid){
        if(room.hostUid===duelUid){tx.update(queue,{queuedAt:duelFirebase.dbMod.serverTimestamp()});return entry.roomCode}
        if(entry.queuedAt?.toMillis&&duelNow()-entry.queuedAt.toMillis()<DUEL_RANDOM_TTL){
         tx.update(ref,{guestUid:duelUid,guestName:name,guestRecord:duelRecordSummary()});tx.delete(queue);return entry.roomCode;
