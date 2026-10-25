@@ -356,7 +356,7 @@ function quizSample(pool,requested,mixed){
  pool=uniqueQuizLyrics(pool);
  if(!mixed)return shuffled(pool).slice(0,requested);
  const current=shuffled(pool.filter(x=>x.era==='現役')),ob=shuffled(pool.filter(x=>x.era==='OB'));
- if(!current.length||!ob.length)return [];
+ if(!current.length||!ob.length)return shuffled(pool).slice(0,requested);
  let total=Math.min(requested,pool.length);
  while(total>0&&(Math.round(total*.3)>ob.length||total-Math.round(total*.3)>current.length))total--;
  const result=[];let ci=0,oi=0;
@@ -800,6 +800,7 @@ function duelQuestions(catalog=null,mixed=null){
  const players=[...new Set(playable.map(x=>x.player))];
  if(playable.length<10||players.length<4)throw Error('選んだ範囲には曲が10曲以上・選手名が4人以上必要です。リーグや現役・OBのチェックを変更してください。');
  const current=playable.filter(x=>x.era==='現役'),ob=playable.filter(x=>x.era==='OB');
+ if(mixed&&(!current.length||!ob.length))mixed=false;
  if(mixed&&(current.length<7||ob.length<3))throw Error('選んだ範囲の現役曲・OB曲が不足しています。出題範囲を変更するか曲を追加してください。');
  const sample=mixed?shuffled([...shuffled(current).slice(0,7),...shuffled(ob).slice(0,3)]):shuffled(playable).slice(0,10);
  return sample.map(s=>{
